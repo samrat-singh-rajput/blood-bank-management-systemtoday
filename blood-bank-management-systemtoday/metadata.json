@@ -1,9 +1,0 @@
-{
-  "name": "Blood Bank Management System",
-  "description": "A comprehensive Blood Bank Management System connecting Admins, Donors, and Recipients with AI-powered health insights.",
-  "requestFramePermissions": [
-    "camera",
-    "microphone",
-    "geolocation"
-  ]
-}

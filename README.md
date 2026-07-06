@@ -2,19 +2,51 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# Advanced Blood Bank Management System
 
-This contains everything you need to run your app locally.
+An advanced, full-stack Blood Bank Management System built with React, TypeScript, Vite, Tailwind CSS, and a PHP/MySQL backend powered by Google Gemini AI.
 
-View your app in AI Studio: https://ai.studio/apps/drive/1FyflpMQ34a4tttcj5mkS9j7BERJ_1tWh
+## Architecture & File Structure
 
-## Run Locally
+The project follows a clean, modern full-stack separation:
 
-**Prerequisites:**  Node.js
+- **`frontend/`**: Contains the client-side single-page application built with Vite and React.
+  - **`src/`**: TypeScript components, API services, and application state.
+  - **`index.html`**: Main HTML entry point.
+- **`backend/`**: Contains the server-side API, email notifications, and database schemas.
+  - **`api.php`**: Primary REST API controller handling CRUD operations and database persistence.
+  - **`mail_config.php`**: PHPMailer SMTP configuration for automated alerts.
+  - **`setup.sql`**: MySQL database creation schema.
+  - **`vendor/`**: Composer dependencies (e.g., PHPMailer).
 
+---
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Getting Started
+
+### 1. Prerequisites
+- **Node.js** (v18+)
+- **PHP** (v8+) & **MySQL** (via XAMPP, WAMP, or MAMP) if running in MySQL database mode.
+
+### 2. Run Locally (Frontend Dev Server)
+
+From the project root directory, you can run commands directly:
+
+```bash
+# 1. Install dependencies for the frontend
+npm install --prefix frontend
+
+# 2. Copy environment variables template
+cp .env.example .env
+
+# 3. Start the development server
+npm run dev
+```
+
+The application will be accessible at `http://localhost:3000`.
+
+### 3. Backend Setup (MySQL Mode)
+To connect to a live MySQL database:
+1. Place the project inside your web server's htdocs directory (e.g., `C:/xampp/htdocs/blood-bank-management-system`).
+2. Import `backend/setup.sql` into phpMyAdmin or your MySQL instance.
+3. Configure your database credentials in `.env` or via the in-app settings modal.
+4. Set the storage mode to `mysql` in the Settings panel or `.env`.

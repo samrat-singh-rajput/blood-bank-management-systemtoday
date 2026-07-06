@@ -3,10 +3,13 @@ import { User, UserRole, BloodStock, DonationRequest, Appointment, Feedback, Sec
 import { db } from "./mongoClient";
 
 const getBaseUrl = () => {
-  const ip = localStorage.getItem('bloodbank_server_ip') || 'localhost';
-  // If the user provided a full path or just an IP, try to be smart
-  if (ip.includes('api.php')) return `http://${ip}`;
-  return `http://${ip}/api.php`;
+  if (import.meta && import.meta.env && import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  const ip = localStorage.getItem('bloodbank_server_ip') || 'localhost/backend';
+  if (ip.includes('api.php')) return ip.startsWith('http') ? ip : `http://${ip}`;
+  const path = ip.includes('/backend') ? ip : `${ip}/backend`;
+  return path.startsWith('http') ? `${path}/api.php` : `http://${path}/api.php`;
 };
 
 const getStorageMode = () => localStorage.getItem('bloodbank_storage_mode') || 'local';
@@ -65,10 +68,10 @@ export const API = {
     throw new Error("Invalid credentials or role mismatch. Please check your MySQL setup if using that mode.");
   },
 
-  sendOTP: async (phone: string) => {
+  sendOTP: async (phone: string, email: string) => {
     if (getStorageMode() === 'mysql') {
       try {
-        const res = await fetchAPI('send_otp', 'POST', { phone });
+        const res = await fetchAPI('send_otp', 'POST', { phone, email });
         if (res && res.success) return res;
       } catch (err: any) {
         throw new Error(`MySQL Error: ${err.message}. Ensure XAMPP is running and IP is correct.`);
@@ -87,7 +90,7 @@ export const API = {
       }
 
       if (existing) {
-        await db.users.updateOne({ phone }, { otp, otp_expiry: expiry });
+        await db.users.updateOne({ phone }, { otp, otp_expiry: expiry, email });
       } else {
         await db.users.insertOne({
           _id: `PENDING_${Date.now()}`,
@@ -99,7 +102,8 @@ export const API = {
           role: UserRole.USER,
           username: '',
           password: '',
-          name: ''
+          name: 'Pending User',
+          email
         });
       }
       return { success: true, debug_otp: otp };
