@@ -505,6 +505,23 @@ export const UserPanel: React.FC = () => {
            </div>
 
            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1 block text-left">Units Required</label>
+              <div className="relative">
+                <Droplet className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                  type="number" 
+                  min="1"
+                  max="20"
+                  required
+                  value={requestForm.units}
+                  onChange={e => setRequestForm({...requestForm, units: parseInt(e.target.value) || 1})}
+                  placeholder="Number of units (e.g. 2)" 
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-transparent outline-none focus:ring-2 focus:ring-blood-500 font-bold dark:text-white"
+                />
+              </div>
+           </div>
+
+           <div className="space-y-2 md:col-span-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1 block text-left">Urgency Level</label>
               <div className="flex gap-4">
                  {(['Low', 'Medium', 'Critical'] as const).map(level => (
