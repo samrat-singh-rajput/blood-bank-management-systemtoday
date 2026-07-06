@@ -119,3 +119,30 @@ db.users.seed([
   { username: 'anuj', password: 'singh', role: 'DONOR', name: 'Anuj Donor', email: 'anuj_donor@example.com' },
   { username: 'anuj', password: 'anuj', role: 'USER', name: 'Anuj User', email: 'anuj_user@example.com' }
 ]);
+
+// Seed Default Blood Stocks
+db.stocks.seed([
+  { bloodGroup: 'O+', units: 120, maxCapacity: 500, lastUpdated: new Date().toISOString() },
+  { bloodGroup: 'A+', units: 85, maxCapacity: 400, lastUpdated: new Date().toISOString() },
+  { bloodGroup: 'B+', units: 95, maxCapacity: 400, lastUpdated: new Date().toISOString() },
+  { bloodGroup: 'AB+', units: 45, maxCapacity: 250, lastUpdated: new Date().toISOString() },
+  { bloodGroup: 'O-', units: 30, maxCapacity: 200, lastUpdated: new Date().toISOString() },
+  { bloodGroup: 'A-', units: 25, maxCapacity: 200, lastUpdated: new Date().toISOString() },
+  { bloodGroup: 'B-', units: 20, maxCapacity: 200, lastUpdated: new Date().toISOString() },
+  { bloodGroup: 'AB-', units: 15, maxCapacity: 150, lastUpdated: new Date().toISOString() }
+]);
+
+// Seed Default Hospitals
+db.hospitals.seed([
+  { name: 'AIIMS Super Speciality Hospital', city: 'New Delhi', address: 'Ansari Nagar East, New Delhi', phone: '+91 11 2658 8500', email: 'aiims_blood@example.com', status: 'Active' },
+  { name: 'Apollo Super Speciality Care', city: 'Mumbai', address: '66 Mathura Road, Sarita Vihar', phone: '+91 22 2692 5000', email: 'apollo_mumbai@example.com', status: 'Active' },
+  { name: 'Fortis Health Center', city: 'Bangalore', address: '154/9 Bannerghatta Road', phone: '+91 80 6621 4444', email: 'fortis_blr@example.com', status: 'Active' },
+  { name: 'Max Care Hospital', city: 'Kolkata', address: 'Plot No 34, Salt Lake City', phone: '+91 33 2355 6000', email: 'max_kol@example.com', status: 'Active' }
+]);
+
+// Seed Default Security Logs
+db.logs.seed([
+  { event: 'System initialized and DB synchronized', user: 'System Admin', ip: '127.0.0.1', severity: 'info', timestamp: new Date().toISOString() },
+  { event: 'Default administrator account login verified', user: 'rajput', ip: '192.168.1.100', severity: 'info', timestamp: new Date().toISOString() },
+  { event: 'Automatic inventory check completed', user: 'System Admin', ip: '127.0.0.1', severity: 'info', timestamp: new Date().toISOString() }
+]);

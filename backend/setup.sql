@@ -130,3 +130,46 @@ CREATE TABLE IF NOT EXISTS campaigns (
     imageUrl VARCHAR(255),
     attendees INT DEFAULT 0
 );
+
+-- Blood Stocks Table
+CREATE TABLE IF NOT EXISTS stocks (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bloodGroup VARCHAR(5) UNIQUE NOT NULL,
+    units INT DEFAULT 0,
+    maxCapacity INT DEFAULT 500,
+    lastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Security Logs Table
+CREATE TABLE IF NOT EXISTS security_logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    event VARCHAR(255) NOT NULL,
+    user VARCHAR(100) NOT NULL,
+    ip VARCHAR(45) NOT NULL,
+    severity ENUM('info', 'warning', 'critical') DEFAULT 'info',
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Seed Default Hospitals
+INSERT IGNORE INTO hospitals (id, name, city, address, phone, email, status) VALUES 
+(1, 'AIIMS Super Speciality Hospital', 'New Delhi', 'Ansari Nagar East, New Delhi', '+91 11 2658 8500', 'aiims_blood@example.com', 'Active'),
+(2, 'Apollo Super Speciality Care', 'Mumbai', '66 Mathura Road, Sarita Vihar', '+91 22 2692 5000', 'apollo_mumbai@example.com', 'Active'),
+(3, 'Fortis Health Center', 'Bangalore', '154/9 Bannerghatta Road', '+91 80 6621 4444', 'fortis_blr@example.com', 'Active'),
+(4, 'Max Care Hospital', 'Kolkata', 'Plot No 34, Salt Lake City', '+91 33 2355 6000', 'max_kol@example.com', 'Active');
+
+-- Seed Default Blood Stocks
+INSERT IGNORE INTO stocks (id, bloodGroup, units, maxCapacity) VALUES 
+(1, 'O+', 120, 500),
+(2, 'A+', 85, 400),
+(3, 'B+', 95, 400),
+(4, 'AB+', 45, 250),
+(5, 'O-', 30, 200),
+(6, 'A-', 25, 200),
+(7, 'B-', 20, 200),
+(8, 'AB-', 15, 150);
+
+-- Seed Default Security Logs
+INSERT IGNORE INTO security_logs (id, event, user, ip, severity) VALUES 
+(1, 'System initialized and DB synchronized', 'System Admin', '127.0.0.1', 'info'),
+(2, 'Default administrator account login verified', 'rajput', '192.168.1.100', 'info'),
+(3, 'Automatic inventory check completed', 'System Admin', '127.0.0.1', 'info');

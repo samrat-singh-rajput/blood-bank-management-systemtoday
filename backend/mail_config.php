@@ -10,15 +10,17 @@ function sendOTPEmail($email, $otp) {
     try {
         // Server settings
         $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
+        $mail->Host       = getenv('SMTP_HOST') ?: 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'sasrajputchauhan@gmail.com';
-        $mail->Password   = 'jqkv wdxb mepj bpfh';
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587;
+        $mail->Username   = getenv('SMTP_USER') ?: 'sasrajputchauhan@gmail.com';
+        $mail->Password   = getenv('SMTP_PASS') ?: 'jqkv wdxb mepj bpfh';
+        $mail->SMTPSecure = (getenv('SMTP_SECURE') === 'ssl') ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port       = (int)(getenv('SMTP_PORT') ?: 587);
 
         // Recipients
-        $mail->setFrom('sasrajputchauhan@gmail.com', 'Blood Bank Project');
+        $fromEmail = getenv('SMTP_FROM_EMAIL') ?: 'sasrajputchauhan@gmail.com';
+        $fromName  = getenv('SMTP_FROM_NAME') ?: 'Blood Bank Project';
+        $mail->setFrom($fromEmail, $fromName);
         $mail->addAddress($email);
 
         // Content

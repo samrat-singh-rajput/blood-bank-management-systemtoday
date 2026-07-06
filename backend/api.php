@@ -11,16 +11,38 @@ header("Content-Type: application/json; charset=UTF-8");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit();
 
+// Load .env if present
+$envFile = __DIR__ . '/../.env';
+if (file_exists($envFile)) {
+    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        if (strpos(trim($line), '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value, " \t\n\r\0\x0B\"'");
+            if (!getenv($key)) {
+                putenv("$key=$value");
+                $_ENV[$key] = $value;
+            }
+        }
+    }
+}
+
 require_once __DIR__ . '/mail_config.php';
 
 class Database {
-    private $host = 'localhost';
-    private $user = 'root';
-    private $pass = '';
-    private $db   = 'bloodbank_system';
+    private $host;
+    private $user;
+    private $pass;
+    private $db;
     public $conn;
 
     public function __construct() {
+        $this->host = getenv('DB_HOST') ?: 'localhost';
+        $this->user = getenv('DB_USER') ?: 'root';
+        $this->pass = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
+        $this->db   = getenv('DB_NAME') ?: 'bloodbank_system';
         $this->conn = @new mysqli($this->host, $this->user, $this->pass, $this->db);
         if ($this->conn->connect_error) {
             echo json_encode(["error" => "DB Connection Failed: " . $this->conn->connect_error . " (Please verify your XAMPP MySQL is running and database 'bloodbank_system' exists)"]);
@@ -79,6 +101,8 @@ class BloodBankAPI {
             case 'check_email': $this->checkEmail(); break;
             case 'complete_signup': $this->completeSignup(); break;
             case 'get_users': $this->getUsers(); break;
+            case 'get_stocks': $this->getStocks(); break;
+            case 'get_logs': $this->getLogs(); break;
             case 'get_requests': $this->getRequests(); break;
             case 'get_hospitals': $this->getHospitals(); break;
             case 'get_feedbacks': $this->getFeedbacks(); break;
@@ -169,6 +193,20 @@ class BloodBankAPI {
         }
     }
 
+    private function checkEmail() {
+        $email = strtolower($this->input['email'] ?? '');
+        if (!$email) {
+            echo json_encode(["error" => "Email required"]);
+            return;
+        }
+        $res = $this->db->query("SELECT id FROM users WHERE email=?", [$email], "s");
+        if ($res->num_rows > 0) {
+            echo json_encode(["error" => "Email already registered."]);
+        } else {
+            echo json_encode(["success" => true, "message" => "Email available"]);
+        }
+    }
+
     private function completeSignup() {
         $phone = $this->input['phone'] ?? '';
         $user = $this->input['username'] ?? '';
@@ -209,6 +247,32 @@ class BloodBankAPI {
         echo json_encode(["users" => $data]);
     }
 
+    private function getStocks() {
+        $res = $this->db->conn->query("SELECT * FROM stocks");
+        $data = [];
+        if ($res) {
+            while($row = $res->fetch_assoc()) {
+                $row['_id'] = (string)$row['id'];
+                $row['units'] = (int)$row['units'];
+                $row['maxCapacity'] = (int)$row['maxCapacity'];
+                $data[] = $row;
+            }
+        }
+        echo json_encode(["stocks" => $data]);
+    }
+
+    private function getLogs() {
+        $res = $this->db->conn->query("SELECT * FROM security_logs ORDER BY timestamp DESC");
+        $data = [];
+        if ($res) {
+            while($row = $res->fetch_assoc()) {
+                $row['_id'] = (string)$row['id'];
+                $data[] = $row;
+            }
+        }
+        echo json_encode(["logs" => $data]);
+    }
+
     private function getRequests() {
         $res = $this->db->conn->query("SELECT * FROM requests ORDER BY date DESC");
         $data = []; while($row = $res->fetch_assoc()) { $row['_id'] = (string)$row['id']; $data[] = $row; }
@@ -246,8 +310,8 @@ class BloodBankAPI {
     }
 
     private function addRequest() {
-        $dn = $this->input['donorName'] ?? ''; $bt = $this->input['bloodType'] ?? ''; $u = $this->input['urgency'] ?? 'Medium'; $h = $this->input['hospital'] ?? 'N/A'; $l = $this->input['location'] ?? ''; $p = $this->input['phone'] ?? ''; $t = $this->input['type'] ?? 'Request'; $d = $this->input['date'] ?? date('Y-m-d');
-        $this->db->execute("INSERT INTO requests (donorName, bloodType, urgency, hospital, location, phone, type, date) VALUES (?,?,?,?,?,?,?,?)", [$dn, $bt, $u, $h, $l, $p, $t, $d], "ssssssss");
+        $dn = $this->input['donorName'] ?? ''; $bt = $this->input['bloodType'] ?? ''; $u = $this->input['urgency'] ?? 'Medium'; $h = $this->input['hospital'] ?? 'N/A'; $l = $this->input['location'] ?? ''; $p = $this->input['phone'] ?? ''; $t = $this->input['type'] ?? 'Request'; $d = $this->input['date'] ?? date('Y-m-d'); $units = (int)($this->input['units'] ?? 1);
+        $this->db->execute("INSERT INTO requests (donorName, bloodType, urgency, hospital, location, phone, type, date, units) VALUES (?,?,?,?,?,?,?,?,?)", [$dn, $bt, $u, $h, $l, $p, $t, $d, $units], "ssssssssi");
         echo json_encode(["success" => true]);
     }
 
@@ -341,9 +405,13 @@ class BloodBankAPI {
         $uid = $this->input['userId'];
         $fields = []; $params = []; $types = "";
         foreach ($this->input as $key => $val) {
-            if ($key !== 'userId' && $key !== 'action') {
+            if ($key !== 'userId' && $key !== 'action' && $key !== '_id' && !is_array($val) && !is_object($val)) {
                 $fields[] = "$key=?"; $params[] = $val; $types .= "s";
             }
+        }
+        if (empty($fields)) {
+            echo json_encode(["error" => "No valid fields to update."]);
+            return;
         }
         $params[] = $uid; $types .= "s";
         $sql = "UPDATE users SET " . implode(", ", $fields) . " WHERE id=?";
@@ -351,9 +419,13 @@ class BloodBankAPI {
         
         $res = $this->db->query("SELECT * FROM users WHERE id=?", [$uid], "s");
         $user = $res->fetch_assoc();
-        $user['_id'] = $user['id'];
-        unset($user['password']);
-        echo json_encode(["user" => $user]);
+        if ($user) {
+            $user['_id'] = $user['id'];
+            unset($user['password']);
+            echo json_encode(["user" => $user]);
+        } else {
+            echo json_encode(["error" => "User not found after update."]);
+        }
     }
 }
 

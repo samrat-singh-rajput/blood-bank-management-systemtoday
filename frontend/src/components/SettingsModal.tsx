@@ -51,9 +51,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     try {
       const updated = await API.updateUserProfile(user._id, formData);
       onUpdate(updated);
-      alert("Profile updated in MySQL!");
+      const isMysql = (localStorage.getItem('bloodbank_storage_mode') || 'local') === 'mysql';
+      alert(isMysql ? "Profile updated in MySQL!" : "Profile updated successfully!");
     } catch (err) {
-      alert("Failed to update MySQL record.");
+      alert("Failed to update profile record.");
     } finally {
       setIsLoading(false);
     }

@@ -171,7 +171,8 @@ export const UserPanel: React.FC = () => {
         hospital: requestForm.hospital,
         location: requestForm.city,
         phone: requestForm.phone,
-        type: 'Request'
+        type: 'Request',
+        units: requestForm.units
       };
       await API.addDonationRequest(req);
       alert("Emergency Request Registered. Administrators have been notified.");
