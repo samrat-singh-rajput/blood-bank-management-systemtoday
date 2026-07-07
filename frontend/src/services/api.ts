@@ -6,13 +6,16 @@ const getBaseUrl = () => {
   if (import.meta && import.meta.env && import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  const ip = localStorage.getItem('bloodbank_server_ip') || 'localhost/backend';
+  const ip = localStorage.getItem('bloodbank_server_ip') || 'localhost:5000';
   if (ip.includes('api.php')) return ip.startsWith('http') ? ip : `http://${ip}`;
-  const path = ip.includes('/backend') ? ip : `${ip}/backend`;
+  const path = ip.includes(':5000') ? ip : (ip.includes('/backend') ? ip : `${ip}/backend`);
   return path.startsWith('http') ? `${path}/api.php` : `http://${path}/api.php`;
 };
 
-const getStorageMode = () => localStorage.getItem('bloodbank_storage_mode') || 'local';
+const getStorageMode = () => {
+  const mode = localStorage.getItem('bloodbank_storage_mode') || 'local';
+  return mode === 'mysql' ? 'mongodb' : mode;
+};
 
 const fetchAPI = async (action: string, method: string = 'GET', data: any = null) => {
   const baseUrl = getBaseUrl();
@@ -49,32 +52,32 @@ const fetchAPI = async (action: string, method: string = 'GET', data: any = null
 
 export const API = {
   login: async (username: string, pass: string, role: UserRole): Promise<User> => {
-    const mode = localStorage.getItem('bloodbank_storage_mode') || 'local';
+    const mode = getStorageMode();
 
-    // 1. Try PHP Backend if mode is 'mysql'
-    if (mode === 'mysql') {
+    // 1. Try Express Backend if mode is 'mongodb'
+    if (mode === 'mongodb') {
       try {
         const res = await fetchAPI('login', 'POST', { username, password: pass, role });
         if (res && res.user) return res.user;
       } catch (err: any) {
-        console.warn("MySQL Login failed, checking simulation.", err.message);
+        console.warn("MongoDB Atlas Login failed, checking simulation.", err.message);
       }
     }
 
-    // 2. Use simulation (Local Storage) if mode is 'local' OR if MySQL fails
+    // 2. Use simulation (Local Storage) if mode is 'local' OR if MongoDB fails
     const user = await db.users.findOne({ username, password: pass, role });
     if (user) return user;
     
-    throw new Error("Invalid credentials or role mismatch. Please check your MySQL setup if using that mode.");
+    throw new Error("Invalid credentials or role mismatch. Please check your MongoDB Atlas setup if using that mode.");
   },
 
   sendOTP: async (phone: string, email: string) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('send_otp', 'POST', { phone, email });
         if (res && res.success) return res;
       } catch (err: any) {
-        throw new Error(`MySQL Error: ${err.message}. Ensure XAMPP is running and IP is correct.`);
+        throw new Error(`MongoDB Atlas Error: ${err.message}. Ensure backend server is running on port 5000.`);
       }
     }
 
@@ -113,12 +116,12 @@ export const API = {
   },
 
   verifyOTP: async (phone: string, otp: string) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('verify_otp', 'POST', { phone, otp });
         if (res && res.success) return res;
       } catch (err: any) {
-        throw new Error(`MySQL Verification Error: ${err.message}`);
+        throw new Error(`MongoDB Atlas Verification Error: ${err.message}`);
       }
     }
 
@@ -145,12 +148,12 @@ export const API = {
   },
 
   completeSignup: async (data: any) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('complete_signup', 'POST', data);
         if (res && !res.error) return res;
       } catch (err: any) {
-        throw new Error(`MySQL Signup Error: ${err.message}`);
+        throw new Error(`MongoDB Atlas Signup Error: ${err.message}`);
       }
     }
 
@@ -190,7 +193,7 @@ export const API = {
       const res = await fetchAPI('get_requests');
       if (res && res.requests) return res.requests;
     } catch (e) {
-      console.warn("MySQL Request fetch failed");
+      console.warn("MongoDB Atlas Request fetch failed");
     }
     return db.requests.find();
   },
@@ -212,7 +215,7 @@ export const API = {
       const res = await fetchAPI('get_stocks');
       if (res && res.stocks) return res.stocks;
     } catch (e) {
-      console.warn("MySQL Stocks fetch failed");
+      console.warn("MongoDB Atlas Stocks fetch failed");
     }
     return db.stocks.find();
   },
@@ -224,12 +227,12 @@ export const API = {
   },
   
   sendMessage: async (msg: any) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('send_message', 'POST', msg);
         if (res && res.success) return res;
       } catch (err: any) {
-        throw new Error(`MySQL Message Error: ${err.message}`);
+        throw new Error(`MongoDB Atlas Message Error: ${err.message}`);
       }
     }
     return db.messages.insertOne(msg);
@@ -253,30 +256,30 @@ export const API = {
   },
   
   addDonationRequest: async (req: any) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('add_request', 'POST', req);
         if (res && res.success) return res;
       } catch (err: any) {
-        throw new Error(`MySQL Save Failed: ${err.message}`);
+        throw new Error(`MongoDB Atlas Save Failed: ${err.message}`);
       }
     }
     return db.requests.insertOne(req);
   },
   updateDonationRequestStatus: async (id: string, s: string) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       const res = await fetchAPI('update_request_status', 'POST', { requestId: id, status: s });
       if (res && res.success) return res;
-      throw new Error("MySQL Update Failed: Could not update request status.");
+      throw new Error("MongoDB Atlas Update Failed: Could not update request status.");
     }
     return db.requests.updateOne({ _id: id }, { status: s });
   },
   
   addHospital: async (h: any) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       const res = await fetchAPI('add_hospital', 'POST', h);
       if (res && res.success) return res;
-      throw new Error("MySQL Save Failed: Could not add hospital.");
+      throw new Error("MongoDB Atlas Save Failed: Could not add hospital.");
     }
     return db.hospitals.insertOne(h);
   },
@@ -300,18 +303,18 @@ export const API = {
   },
   
   addFeedback: async (f: any) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       const res = await fetchAPI('add_feedback', 'POST', f);
       if (res && res.success) return res;
-      throw new Error("MySQL Save Failed: Could not send feedback.");
+      throw new Error("MongoDB Atlas Save Failed: Could not send feedback.");
     }
     return db.feedback.insertOne(f);
   },
   replyToFeedback: async (id: string, r: string) => {
-    if (getStorageMode() === 'mysql') {
+    if (getStorageMode() === 'mongodb') {
       const res = await fetchAPI('reply_feedback', 'POST', { feedbackId: id, reply: r });
       if (res && res.success) return res;
-      throw new Error("MySQL Update Failed: Could not reply to feedback.");
+      throw new Error("MongoDB Atlas Update Failed: Could not reply to feedback.");
     }
     return db.feedback.updateOne({ _id: id }, { reply: r });
   },

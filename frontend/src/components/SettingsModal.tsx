@@ -27,8 +27,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [activeTab, setActiveTab] = useState<SettingsTab>(user._id === 'guest' ? 'network' : 'profile');
   const [isLoading, setIsLoading] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
-  const [serverIp, setServerIp] = useState(() => localStorage.getItem('bloodbank_server_ip') || 'localhost');
-  const [storageMode, setStorageMode] = useState<'local' | 'mysql'>(() => (localStorage.getItem('bloodbank_storage_mode') as 'local' | 'mysql') || 'local');
+  const [serverIp, setServerIp] = useState(() => localStorage.getItem('bloodbank_server_ip') || 'localhost:5000');
+  const [storageMode, setStorageMode] = useState<'local' | 'mongodb'>(() => {
+    const stored = localStorage.getItem('bloodbank_storage_mode') || 'local';
+    return (stored === 'mysql' ? 'mongodb' : stored) as 'local' | 'mongodb';
+  });
   const [formData, setFormData] = useState({
     name: user.name,
     email: user.email || '',
@@ -51,8 +54,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     try {
       const updated = await API.updateUserProfile(user._id, formData);
       onUpdate(updated);
-      const isMysql = (localStorage.getItem('bloodbank_storage_mode') || 'local') === 'mysql';
-      alert(isMysql ? "Profile updated in MySQL!" : "Profile updated successfully!");
+      const isMongodb = (localStorage.getItem('bloodbank_storage_mode') || 'local') === 'mongodb' || (localStorage.getItem('bloodbank_storage_mode') || 'local') === 'mysql';
+      alert(isMongodb ? "Profile updated in MongoDB Atlas!" : "Profile updated successfully!");
     } catch (err) {
       alert("Failed to update profile record.");
     } finally {
@@ -129,8 +132,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-[2rem] border border-blue-100 dark:border-blue-900/30 flex items-start gap-4">
                <div className="p-3 bg-white dark:bg-blue-900 rounded-2xl text-blue-600 shadow-sm"><Globe size={24}/></div>
                <div>
-                  <h4 className="font-black text-blue-900 dark:text-blue-400 uppercase text-sm">XAMPP Centralized Storage</h4>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">To see data on other laptops, enter the IP address of the laptop running XAMPP.</p>
+                  <h4 className="font-black text-blue-900 dark:text-blue-400 uppercase text-sm">MongoDB Atlas Central Storage</h4>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">To connect to your cloud database, specify the host running the Node.js backend server.</p>
                </div>
             </div>
 
@@ -140,14 +143,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div>
                       <h4 className="font-black text-blood-900 dark:text-blood-400 uppercase text-sm">Storage Mode</h4>
                       <p className="text-[10px] text-blood-700 dark:text-blood-300 mt-1">
-                        {storageMode === 'mysql' ? 'Currently saving to MySQL (phpMyAdmin)' : 'Currently saving to Local Storage (Browser)'}
+                        {storageMode === 'mongodb' ? 'Currently saving to MongoDB Atlas' : 'Currently saving to Local Storage (Browser)'}
                       </p>
                     </div>
                     <button 
-                      onClick={() => setStorageMode(storageMode === 'local' ? 'mysql' : 'local')}
-                      className={`w-14 h-8 rounded-full transition-colors relative ${storageMode === 'mysql' ? 'bg-blood-600' : 'bg-gray-300'}`}
+                      onClick={() => setStorageMode(storageMode === 'local' ? 'mongodb' : 'local')}
+                      className={`w-14 h-8 rounded-full transition-colors relative ${storageMode === 'mongodb' ? 'bg-blood-600' : 'bg-gray-300'}`}
                     >
-                      <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${storageMode === 'mysql' ? 'translate-x-7' : 'translate-x-1'}`}></div>
+                      <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-transform ${storageMode === 'mongodb' ? 'translate-x-7' : 'translate-x-1'}`}></div>
                     </button>
                  </div>
                )}
@@ -173,7 +176,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       {testStatus === 'testing' ? '...' : testStatus === 'success' ? 'OK!' : testStatus === 'error' ? 'Fail' : 'Test'}
                     </button>
                   </div>
-                  <p className="text-[10px] text-gray-400 font-medium px-1">Default: 'localhost' (for same machine). Use IPv4 for network sync.</p>
+                  <p className="text-[10px] text-gray-400 font-medium px-1">Default: 'localhost:5000' (local Express port). Use host:port for network sync.</p>
                </div>
 
                <div className="space-y-1">
