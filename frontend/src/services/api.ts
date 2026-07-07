@@ -320,6 +320,14 @@ export const API = {
   },
   
   toggleUserStatus: async (uid: string) => {
+    if (getStorageMode() === 'mongodb') {
+      const res = await fetchAPI('toggle_user_status', 'POST', { userId: uid });
+      if (res && res.newStatus) {
+        await db.users.updateOne({ _id: uid }, { status: res.newStatus });
+        return res.newStatus;
+      }
+      throw new Error(res?.error || "Failed to toggle user status in MongoDB Atlas");
+    }
     await fetchAPI('toggle_user_status', 'POST', { userId: uid });
     const user = await db.users.findOne({ _id: uid });
     const newStatus = user?.status === 'Active' ? 'Blocked' : 'Active';
@@ -348,6 +356,14 @@ export const API = {
   },
   
   updateUserProfile: async (uid: string, data: any) => {
+    if (getStorageMode() === 'mongodb') {
+      const res = await fetchAPI('update_profile', 'POST', { userId: uid, ...data });
+      if (res && res.user) {
+        await db.users.updateOne({ _id: uid }, data);
+        return res.user;
+      }
+      throw new Error(res?.error || "Failed to update profile in MongoDB Atlas");
+    }
     await fetchAPI('update_profile', 'POST', { userId: uid, ...data });
     await db.users.updateOne({ _id: uid }, data);
     return await db.users.findOne({ _id: uid });
