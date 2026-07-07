@@ -271,8 +271,27 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
              {!currentUser ? (
                <div className="flex items-center gap-4">
-                  <Button onClick={() => setCurrentView('login')} variant="outline" className={`border-none ${currentView === 'landing' ? 'text-white' : 'text-gray-600'}`}>Login</Button>
-                  <Button onClick={() => setCurrentView('register')} className="bg-blood-600 text-white px-8 rounded-xl shadow-xl">Sign Up</Button>
+                  {currentView !== 'landing' && (
+                    <Button 
+                      onClick={() => setCurrentView('landing')} 
+                      variant="outline" 
+                      className="border-blood-600 text-blood-600 hover:bg-blood-50 hover:text-blood-700 dark:hover:bg-blood-900/10 px-5 rounded-xl shadow-sm text-sm"
+                    >
+                      Back to Home
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={() => setCurrentView('login')} 
+                    className="bg-blood-600 text-white hover:bg-blood-700 px-8 rounded-xl shadow-xl border-b-2 border-blood-800"
+                  >
+                    Login
+                  </Button>
+                  <Button 
+                    onClick={() => setCurrentView('register')} 
+                    className="bg-blood-600 text-white hover:bg-blood-700 px-8 rounded-xl shadow-xl border-b-2 border-blood-800"
+                  >
+                    Sign Up
+                  </Button>
                </div>
              ) : (
                 <div className="flex items-center gap-6">
@@ -323,7 +342,7 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      <div className="pt-24 lg:pt-32">
+      <div className={`pt-24 lg:pt-32 ${currentView === 'landing' ? 'bg-gray-900' : ''}`}>
         {currentView === 'landing' && <LandingPage onNavigate={setCurrentView} />}
 
         {currentView === 'login' && (
