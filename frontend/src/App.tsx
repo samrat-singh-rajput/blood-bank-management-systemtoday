@@ -279,7 +279,7 @@ const App: React.FC = () => {
                   {/* Profile Dropdown */}
                   <div className="relative">
                     <div 
-                      className="flex items-center gap-3 cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-1.5 pr-4 rounded-full transition-colors border border-transparent dark:border-gray-700"
+                      className="flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 pr-2.5 rounded-full transition-colors border border-transparent dark:border-gray-700"
                       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                     >
                       <div className="w-11 h-11 rounded-full bg-blood-100 dark:bg-blood-900/30 text-blood-600 flex items-center justify-center font-bold overflow-hidden border border-blood-200 dark:border-blood-800">
