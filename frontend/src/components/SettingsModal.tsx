@@ -112,7 +112,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="flex flex-col items-center mb-8 space-y-4">
                <div 
                  onClick={() => fileInputRef.current?.click()}
-                 className="relative group cursor-pointer w-24 h-24 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden border-2 border-blood-500 shadow-xl"
+                 className="relative group cursor-pointer w-32 h-32 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden border-2 border-blood-500 shadow-xl"
                >
                   {formData.avatarUrl ? (
                      <img src={formData.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />

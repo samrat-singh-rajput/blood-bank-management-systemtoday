@@ -275,36 +275,14 @@ const App: React.FC = () => {
                   <Button onClick={() => setCurrentView('register')} className="bg-blood-600 text-white px-8 rounded-xl shadow-xl">Sign Up</Button>
                </div>
              ) : (
-               <div className="flex items-center gap-6">
-                  {/* Theme Toggle */}
-                  <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-1">
-                    <button 
-                      onClick={() => setIsDarkMode(false)} 
-                      className={`p-1.5 rounded-full transition-all ${!isDarkMode ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600'}`}
-                    >
-                      <Sun size={14} />
-                    </button>
-                    <button 
-                      onClick={() => setIsDarkMode(true)} 
-                      className={`p-1.5 rounded-full transition-all ${isDarkMode ? 'bg-blood-600 shadow-sm text-white' : 'text-gray-400 hover:text-gray-600'}`}
-                    >
-                      <Moon size={14} />
-                    </button>
-                  </div>
-
-                  {/* DB Sync Indicator */}
-                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-green-900/20 border border-green-800/30 rounded-full">
-                     <Database size={12} className="text-green-500" />
-                     <span className="text-[9px] font-black tracking-widest uppercase text-green-500">DB Synced</span>
-                  </div>
-
+                <div className="flex items-center gap-6">
                   {/* Profile Dropdown */}
                   <div className="relative">
                     <div 
                       className="flex items-center gap-3 cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-1.5 pr-4 rounded-full transition-colors border border-transparent dark:border-gray-700"
                       onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                     >
-                      <div className="w-8 h-8 rounded-full bg-blood-100 dark:bg-blood-900/30 text-blood-600 flex items-center justify-center font-bold overflow-hidden border border-blood-200 dark:border-blood-800">
+                      <div className="w-11 h-11 rounded-full bg-blood-100 dark:bg-blood-900/30 text-blood-600 flex items-center justify-center font-bold overflow-hidden border border-blood-200 dark:border-blood-800">
                         {currentUser.avatarUrl ? (
                           <img src={currentUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                         ) : (
