@@ -271,15 +271,6 @@ const App: React.FC = () => {
           <div className="flex items-center gap-4">
              {!currentUser ? (
                <div className="flex items-center gap-4">
-                  {currentView !== 'landing' && (
-                    <Button 
-                      onClick={() => setCurrentView('landing')} 
-                      variant="outline" 
-                      className="border-blood-600 text-blood-600 hover:bg-blood-50 hover:text-blood-700 dark:hover:bg-blood-900/10 px-5 rounded-xl shadow-sm text-sm"
-                    >
-                      Back to Home
-                    </Button>
-                  )}
                   <Button 
                     onClick={() => setCurrentView('login')} 
                     className="bg-blood-600 text-white hover:bg-blood-700 px-8 rounded-xl shadow-xl border-b-2 border-blood-800"
@@ -382,6 +373,16 @@ const App: React.FC = () => {
               {regStep !== 'credentials' && <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>}
               {regStep === 'credentials' && <div className="absolute top-0 left-0 w-full h-1.5 bg-blood-600"></div>}
               
+              <button 
+                onClick={() => {
+                  setRegStep('role');
+                  setCurrentView('landing');
+                }} 
+                className="mb-8 text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 font-bold text-sm transition-colors group"
+              >
+                <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Back
+              </button>
+
               {renderRegisterContent()}
 
               <p className="mt-8 text-[11px] text-gray-400 font-bold uppercase tracking-widest">
