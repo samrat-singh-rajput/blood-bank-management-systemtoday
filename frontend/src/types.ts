@@ -15,6 +15,8 @@ export interface User {
   bloodType?: string;
   location?: string;
   isVerified?: boolean;
+  is_verified?: boolean | number;
+  googleId?: string;
   avatarUrl?: string;
   joinDate?: string;
   phone?: string;

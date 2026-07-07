@@ -16,7 +16,9 @@ export const DonorPanel: React.FC<DonorPanelProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   
   // Data States
-  const [isVerified, setIsVerified] = useState(user.isVerified);
+  const [isVerified, setIsVerified] = useState<boolean>(
+    !!(user.isVerified || user.is_verified === true || user.is_verified === 1)
+  );
   const [healthTips, setHealthTips] = useState<string[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [certificates, setCertificates] = useState<DonorCertificate[]>([]);

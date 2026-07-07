@@ -189,6 +189,71 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
         break;
       }
 
+      case 'login_google': {
+        const { idToken, role } = req.body;
+        if (!idToken) return res.json({ error: "idToken is required for Google Sign-In" });
+        
+        try {
+          const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`Google token validation returned status ${response.status}: ${errText}`);
+          }
+          
+          const profile = await response.json();
+          
+          const clientID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+          if (clientID && profile.aud !== clientID) {
+            throw new Error("Google token audience mismatch");
+          }
+          
+          const email = profile.email;
+          const name = profile.name;
+          const avatarUrl = profile.picture;
+          const googleId = profile.sub;
+          
+          if (!email) return res.json({ error: "Email not provided in Google profile" });
+          
+          let user = await db.collection('users').findOne({ email: email.toLowerCase() });
+          if (!user) {
+            const id = 'BB_G_' + Date.now();
+            const jd = new Date().toISOString().split('T')[0];
+            user = {
+              _id: id,
+              username: email.split('@')[0],
+              role: role || 'USER',
+              name: name || email.split('@')[0],
+              email: email.toLowerCase(),
+              googleId: googleId,
+              phone: 'N/A',
+              avatarUrl: avatarUrl || '',
+              joinDate: jd,
+              status: 'Active',
+              is_verified: 1,
+              createdAt: new Date()
+            };
+            await db.collection('users').insertOne(user);
+          } else {
+            const updates = {};
+            if (!user.googleId) updates.googleId = googleId;
+            if (avatarUrl && avatarUrl !== user.avatarUrl) updates.avatarUrl = avatarUrl;
+            
+            if (Object.keys(updates).length > 0) {
+              await db.collection('users').updateOne({ email: email.toLowerCase() }, { $set: updates });
+              Object.assign(user, updates);
+            }
+          }
+          
+          const userResponse = { ...user };
+          delete userResponse.password;
+          res.json({ user: userResponse });
+        } catch (err) {
+          console.error("Secure Google authentication error:", err.message);
+          res.json({ error: "Google authentication failed: " + err.message });
+        }
+        break;
+      }
+
       case 'send_otp': {
         const { phone, email } = req.body;
         if (!phone || !email) return res.json({ error: "Phone number and email required" });

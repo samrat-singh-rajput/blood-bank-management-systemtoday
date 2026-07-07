@@ -71,6 +71,68 @@ export const API = {
     throw new Error("Invalid credentials or role mismatch. Please check your MongoDB Atlas setup if using that mode.");
   },
 
+  loginWithGoogle: async (credential: string, role?: string): Promise<User> => {
+    const mode = getStorageMode();
+
+    if (mode === 'mongodb') {
+      try {
+        const res = await fetchAPI('login_google', 'POST', { idToken: credential, role });
+        if (res && res.user) return res.user;
+      } catch (err: any) {
+        console.warn("MongoDB Atlas Google Login failed, checking simulation.", err.message);
+        throw err;
+      }
+    }
+
+    // Local Simulation Fallback (Decode JWT client-side for mock database)
+    try {
+      const base64Url = credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      const profile = JSON.parse(jsonPayload);
+      const email = profile.email;
+      const name = profile.name;
+      const avatarUrl = profile.picture;
+      const googleId = profile.sub;
+
+      let user = await db.users.findOne({ email });
+      if (!user) {
+        const newUser = {
+          _id: 'BB_G_' + Date.now(),
+          username: email.split('@')[0],
+          role: (role as UserRole) || UserRole.USER,
+          name: name,
+          email: email,
+          googleId: googleId,
+          phone: 'N/A',
+          avatarUrl: avatarUrl || '',
+          joinDate: new Date().toISOString().split('T')[0],
+          status: 'Active',
+          is_verified: true,
+          createdAt: new Date().toISOString()
+        };
+        await db.users.insertOne(newUser);
+        user = newUser;
+      } else {
+        const updates: any = {};
+        if (!user.googleId) updates.googleId = googleId;
+        if (avatarUrl && avatarUrl !== user.avatarUrl) updates.avatarUrl = avatarUrl;
+        if (Object.keys(updates).length > 0) {
+          await db.users.updateOne({ email }, updates);
+          Object.assign(user, updates);
+        }
+      }
+      return user;
+    } catch (e: any) {
+      throw new Error("Failed to parse Google ID token: " + e.message);
+    }
+  },
+
   sendOTP: async (phone: string, email: string) => {
     if (getStorageMode() === 'mongodb') {
       try {

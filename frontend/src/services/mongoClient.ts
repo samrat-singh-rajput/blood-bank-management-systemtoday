@@ -115,9 +115,9 @@ export const db = {
 
 // Seed Default Users
 db.users.seed([
-  { username: 'rajput', password: 'rajput', role: 'ADMIN', name: 'System Admin', email: 'admin@bloodbank.com' },
-  { username: 'anuj', password: 'singh', role: 'DONOR', name: 'Anuj Donor', email: 'anuj_donor@example.com' },
-  { username: 'anuj', password: 'anuj', role: 'USER', name: 'Anuj User', email: 'anuj_user@example.com' }
+  { username: 'rajput', password: 'rajput', role: 'ADMIN', name: 'System Admin', email: 'admin@bloodbank.com', status: 'Active', is_verified: true, joinDate: '2023-10-01' },
+  { username: 'anuj', password: 'singh', role: 'DONOR', name: 'Anuj Donor', email: 'anuj_donor@example.com', bloodType: 'A+', status: 'Active', is_verified: true, joinDate: '2023-10-01', phone: '+91 98765 43210', location: 'New Delhi' },
+  { username: 'anuj', password: 'anuj', role: 'USER', name: 'Anuj User', email: 'anuj_user@example.com', bloodType: 'B-', status: 'Active', is_verified: true, joinDate: '2023-10-01', phone: '+91 99999 88888', location: 'Mumbai' }
 ]);
 
 // Seed Default Blood Stocks
