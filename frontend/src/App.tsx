@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Droplet, LogOut, ArrowLeft, Settings, Mail, ShieldCheck, 
+import {
+  Droplet, LogOut, ArrowLeft, Settings, Mail, ShieldCheck,
   Lock, UserPlus, LogIn, CheckCircle2, AlertTriangle, User as UserIcon,
   ChevronRight, Globe, Shield, Phone, Sun, Moon, Database, ChevronDown, X
 } from 'lucide-react';
@@ -75,7 +75,7 @@ const App: React.FC = () => {
               }
             }
           });
-          
+
           g.accounts.id.renderButton(container, {
             theme: "outline",
             size: "large",
@@ -201,15 +201,15 @@ const App: React.FC = () => {
   };
 
   const renderRegisterContent = () => {
-    switch(regStep) {
+    switch (regStep) {
       case 'role':
         return (
           <div className="space-y-6 animate-fade-in-up">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Select Your Role</h2>
             <p className="text-sm text-gray-500 font-medium">Choose how you want to participate in the network</p>
             <div className="grid grid-cols-1 gap-4">
-              <button 
-                onClick={() => { setRegDetails({...regDetails, role: UserRole.DONOR}); setRegStep('mobile'); }}
+              <button
+                onClick={() => { setRegDetails({ ...regDetails, role: UserRole.DONOR }); setRegStep('mobile'); }}
                 className="p-6 bg-gray-50 dark:bg-gray-800 rounded-3xl border-2 border-transparent hover:border-blood-500 transition-all text-left flex items-center gap-4 group"
               >
                 <div className="w-12 h-12 rounded-2xl bg-blood-100 dark:bg-blood-900/30 text-blood-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -220,8 +220,8 @@ const App: React.FC = () => {
                   <p className="text-xs text-gray-500">I want to donate blood and save lives</p>
                 </div>
               </button>
-              <button 
-                onClick={() => { setRegDetails({...regDetails, role: UserRole.USER}); setRegStep('mobile'); }}
+              <button
+                onClick={() => { setRegDetails({ ...regDetails, role: UserRole.USER }); setRegStep('mobile'); }}
                 className="p-6 bg-gray-50 dark:bg-gray-800 rounded-3xl border-2 border-transparent hover:border-blue-500 transition-all text-left flex items-center gap-4 group"
               >
                 <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -240,39 +240,39 @@ const App: React.FC = () => {
           <form onSubmit={handleSendOTP} className="space-y-6 animate-fade-in-up">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Registration Details</h2>
             <p className="text-sm text-gray-500 font-medium">Enter your details to receive an OTP via email</p>
-            
+
             <div className="space-y-4 text-left">
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Full Name</label>
-                <input 
-                  type="text" placeholder="Your Name" required 
-                  value={regDetails.name} onChange={e => setRegDetails({...regDetails, name: e.target.value})} 
-                  className="w-full p-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-none font-bold shadow-inner focus:ring-2 focus:ring-blood-500 outline-none" 
+                <input
+                  type="text" placeholder="Your Name" required
+                  value={regDetails.name} onChange={e => setRegDetails({ ...regDetails, name: e.target.value })}
+                  className="w-full p-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-none font-bold shadow-inner focus:ring-2 focus:ring-blood-500 outline-none"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Email Address</label>
-                <input 
-                  type="email" placeholder="email@example.com" required 
-                  value={regDetails.email} onChange={e => setRegDetails({...regDetails, email: e.target.value})} 
-                  className="w-full p-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-none font-bold shadow-inner focus:ring-2 focus:ring-blood-500 outline-none" 
+                <input
+                  type="email" placeholder="email@example.com" required
+                  value={regDetails.email} onChange={e => setRegDetails({ ...regDetails, email: e.target.value })}
+                  className="w-full p-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-none font-bold shadow-inner focus:ring-2 focus:ring-blood-500 outline-none"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Mobile Number</label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input 
-                    type="tel" required placeholder="10-digit mobile number" 
+                  <input
+                    type="tel" required placeholder="10-digit mobile number"
                     value={regPhone} onChange={e => setRegPhone(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blood-500 outline-none font-bold" 
+                    className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blood-500 outline-none font-bold"
                   />
                 </div>
               </div>
             </div>
 
             {authError && <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100 text-left">{authError}</div>}
-            
+
             <div className="pt-4 flex gap-3">
               <Button type="button" variant="outline" onClick={() => setRegStep('role')} className="flex-1 rounded-2xl">Back</Button>
               <Button isLoading={isAuthLoading} className="flex-[2] bg-blood-600 text-white rounded-2xl shadow-xl">Send OTP</Button>
@@ -324,18 +324,18 @@ const App: React.FC = () => {
           <form onSubmit={handleVerifyOTP} className="space-y-6 animate-fade-in-up">
             <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Enter OTP</h2>
             <p className="text-sm text-gray-500 font-medium">We've sent a code to your email: <span className="text-blood-600 font-bold">{regDetails.email}</span></p>
-            
+
             <div className="text-left space-y-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">6-Digit Code</label>
-              <input 
-                type="text" required maxLength={6} placeholder="000000" 
+              <input
+                type="text" required maxLength={6} placeholder="000000"
                 value={regOTP} onChange={e => setRegOTP(e.target.value)}
-                className="w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blood-500 outline-none text-center text-3xl font-black tracking-[0.5em]" 
+                className="w-full p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blood-500 outline-none text-center text-3xl font-black tracking-[0.5em]"
               />
             </div>
 
             {authError && <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100 text-left">{authError}</div>}
-            
+
             <div className="pt-4 space-y-3">
               <Button isLoading={isAuthLoading} className="w-full bg-blood-600 text-white py-5 rounded-2xl shadow-xl">Verify & Continue</Button>
               <button type="button" onClick={handleSendOTP} className="text-xs font-black text-gray-400 uppercase tracking-widest hover:text-blood-600 transition-colors">Resend OTP</button>
@@ -351,24 +351,24 @@ const App: React.FC = () => {
             <div className="space-y-4">
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Username</label>
-                <input 
-                  type="text" placeholder="Choose Username" required 
-                  value={regDetails.username} onChange={e => setRegDetails({...regDetails, username: e.target.value})} 
-                  className="w-full p-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-none font-bold shadow-inner focus:ring-2 focus:ring-blood-500 outline-none" 
+                <input
+                  type="text" placeholder="Choose Username" required
+                  value={regDetails.username} onChange={e => setRegDetails({ ...regDetails, username: e.target.value })}
+                  className="w-full p-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-none font-bold shadow-inner focus:ring-2 focus:ring-blood-500 outline-none"
                 />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Password</label>
-                <input 
-                  type="password" placeholder="Create Password" required 
-                  value={regDetails.password} onChange={e => setRegDetails({...regDetails, password: e.target.value})} 
-                  className="w-full p-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-none font-bold shadow-inner focus:ring-2 focus:ring-blood-500 outline-none" 
+                <input
+                  type="password" placeholder="Create Password" required
+                  value={regDetails.password} onChange={e => setRegDetails({ ...regDetails, password: e.target.value })}
+                  className="w-full p-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-none font-bold shadow-inner focus:ring-2 focus:ring-blood-500 outline-none"
                 />
               </div>
             </div>
-            
+
             {authError && <div className="p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">{authError}</div>}
-            
+
             <Button isLoading={isAuthLoading} className="w-full py-5 rounded-2xl bg-blood-600 text-white font-black uppercase tracking-widest shadow-xl mt-4">Complete Registration</Button>
           </form>
         );
@@ -380,64 +380,64 @@ const App: React.FC = () => {
       <nav className={`fixed w-full z-40 transition-all ${currentView === 'landing' ? 'bg-gray-900/95 border-b border-white/10 py-5' : 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b dark:border-gray-800 shadow-sm py-4'}`}>
         <div className="container mx-auto px-6 flex justify-between items-center">
           <div className="flex items-center gap-6" onClick={() => !currentUser && setCurrentView('landing')}>
-            <div className="bg-blood-600 text-white p-2.5 rounded-2xl shadow-xl cursor-pointer hover:scale-105 transition-transform"><Droplet size={26} fill="currentColor"/></div>
+            <div className="bg-blood-600 text-white p-2.5 rounded-2xl shadow-xl cursor-pointer hover:scale-105 transition-transform"><Droplet size={26} fill="currentColor" /></div>
             <span className={`text-2xl font-black tracking-tighter cursor-pointer ${currentView === 'landing' ? 'text-white' : 'text-gray-900 dark:text-white'}`}>BloodBank</span>
           </div>
           <div className="flex items-center gap-4">
-             {!currentUser ? (
-                  <Button 
-                    onClick={() => {
-                      setCurrentView('login');
-                    }} 
-                    className="bg-blood-600 text-white hover:bg-blood-700 px-8 rounded-xl shadow-xl border-b-2 border-blood-800"
+            {!currentUser ? (
+              <Button
+                onClick={() => {
+                  setCurrentView('login');
+                }}
+                className="bg-blood-600 text-white hover:bg-blood-700 px-8 rounded-xl shadow-xl border-b-2 border-blood-800"
+              >
+                Sign In
+              </Button>
+            ) : (
+              <div className="flex items-center gap-6">
+                {/* Profile Dropdown */}
+                <div className="relative">
+                  <div
+                    className="flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 pr-2.5 rounded-full transition-colors border border-transparent dark:border-gray-700"
+                    onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                   >
-                    Sign Up
-                  </Button>
-             ) : (
-                <div className="flex items-center gap-6">
-                  {/* Profile Dropdown */}
-                  <div className="relative">
-                    <div 
-                      className="flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-1 pr-2.5 rounded-full transition-colors border border-transparent dark:border-gray-700"
-                      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                    >
-                      <div className="w-11 h-11 rounded-full bg-blood-100 dark:bg-blood-900/30 text-blood-600 flex items-center justify-center font-bold overflow-hidden border border-blood-200 dark:border-blood-800">
-                        {currentUser.avatarUrl ? (
-                          <img src={currentUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                        ) : (
-                          (currentUser.name || 'U').charAt(0).toUpperCase()
-                        )}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black text-gray-900 dark:text-white leading-tight">{currentUser.name || 'User'}</span>
-                        <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 tracking-widest uppercase">{currentUser.role}</span>
-                      </div>
-                      <ChevronDown size={14} className="text-gray-400 ml-1" />
+                    <div className="w-11 h-11 rounded-full bg-blood-100 dark:bg-blood-900/30 text-blood-600 flex items-center justify-center font-bold overflow-hidden border border-blood-200 dark:border-blood-800">
+                      {currentUser.avatarUrl ? (
+                        <img src={currentUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        (currentUser.name || 'U').charAt(0).toUpperCase()
+                      )}
                     </div>
-
-                    {showProfileDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowProfileDropdown(false)}></div>
-                        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50 py-2">
-                          <button 
-                            onClick={() => { setShowSettings(true); setShowProfileDropdown(false); }}
-                            className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex items-center gap-3"
-                          >
-                            <Settings size={16} className="text-gray-400" /> Settings
-                          </button>
-                          <div className="h-px w-full bg-gray-100 dark:bg-gray-700/50 my-1"></div>
-                          <button 
-                            onClick={() => { handleLogout(); setShowProfileDropdown(false); }}
-                            className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-3"
-                          >
-                            <LogOut size={16} /> Logout
-                          </button>
-                        </div>
-                      </>
-                    )}
+                    <div className="flex flex-col">
+                      <span className="text-xs font-black text-gray-900 dark:text-white leading-tight">{currentUser.name || 'User'}</span>
+                      <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 tracking-widest uppercase">{currentUser.role}</span>
+                    </div>
+                    <ChevronDown size={14} className="text-gray-400 ml-1" />
                   </div>
-               </div>
-             )}
+
+                  {showProfileDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowProfileDropdown(false)}></div>
+                      <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 overflow-hidden z-50 py-2">
+                        <button
+                          onClick={() => { setShowSettings(true); setShowProfileDropdown(false); }}
+                          className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors flex items-center gap-3"
+                        >
+                          <Settings size={16} className="text-gray-400" /> Settings
+                        </button>
+                        <div className="h-px w-full bg-gray-100 dark:bg-gray-700/50 my-1"></div>
+                        <button
+                          onClick={() => { handleLogout(); setShowProfileDropdown(false); }}
+                          className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors flex items-center gap-3"
+                        >
+                          <LogOut size={16} /> Logout
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </nav>
@@ -451,17 +451,17 @@ const App: React.FC = () => {
               <button onClick={() => setCurrentView('landing')} className="mb-6 text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 font-bold text-xs transition-colors group">
                 <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back
               </button>
-              
+
               <h2 className="text-3xl font-bold text-[#0d5c3a] dark:text-emerald-400 mb-1 tracking-tight">
                 Log in to your account
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-8 font-medium">
                 Don't have an account?{' '}
-                <button 
+                <button
                   onClick={() => {
                     setRegStep('role');
                     setCurrentView('register');
-                  }} 
+                  }}
                   className="text-blue-600 hover:text-blue-700 font-bold hover:underline"
                 >
                   Sign Up
@@ -474,10 +474,10 @@ const App: React.FC = () => {
                   <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Account Access Role</label>
                   <div className="grid grid-cols-3 gap-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl">
                     {(['ADMIN', 'DONOR', 'USER'] as UserRole[]).map(r => (
-                      <button 
-                        key={r} 
-                        type="button" 
-                        onClick={() => setLoginForm({...loginForm, role: r})} 
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setLoginForm({ ...loginForm, role: r })}
                         className={`py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${loginForm.role === r ? 'bg-white dark:bg-gray-700 text-blood-600 shadow-sm' : 'text-gray-500'}`}
                       >
                         {r}
@@ -489,10 +489,10 @@ const App: React.FC = () => {
                 {/* 2. Username (below Account Access Role) */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Username</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={loginForm.username}
-                    onChange={e => setLoginForm({...loginForm, username: e.target.value})}
+                    onChange={e => setLoginForm({ ...loginForm, username: e.target.value })}
                     placeholder="Enter username"
                     className="w-full p-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 outline-none transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold text-sm"
                     required
@@ -502,10 +502,10 @@ const App: React.FC = () => {
                 {/* 3. Password (below Username) */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Password</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     value={loginForm.password}
-                    onChange={e => setLoginForm({...loginForm, password: e.target.value})}
+                    onChange={e => setLoginForm({ ...loginForm, password: e.target.value })}
                     placeholder="Enter password"
                     className="w-full p-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-700 outline-none transition-all focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold text-sm"
                     required
@@ -515,7 +515,7 @@ const App: React.FC = () => {
                 {authError && <div className="p-4 bg-red-50 dark:bg-red-950/20 text-red-600 text-xs font-bold rounded-xl border border-red-100 dark:border-red-900/30">{authError}</div>}
 
                 <div className="flex gap-3 pt-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setCurrentView('landing')}
                     className="px-6 py-2.5 rounded-lg font-bold border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm"
@@ -537,12 +537,12 @@ const App: React.FC = () => {
             <div className="bg-white dark:bg-gray-900 p-12 rounded-[3rem] shadow-2xl w-full max-w-lg border border-gray-100 dark:border-gray-800 relative overflow-hidden text-center transition-all">
               {regStep !== 'credentials' && <div className="absolute top-0 left-0 w-full h-1.5 bg-blue-500"></div>}
               {regStep === 'credentials' && <div className="absolute top-0 left-0 w-full h-1.5 bg-blood-600"></div>}
-              
-              <button 
+
+              <button
                 onClick={() => {
                   setRegStep('role');
                   setCurrentView('landing');
-                }} 
+                }}
                 className="mb-8 text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 font-bold text-sm transition-colors group"
               >
                 <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" /> Back
@@ -551,7 +551,7 @@ const App: React.FC = () => {
               {renderRegisterContent()}
 
               <p className="mt-8 text-[11px] text-gray-400 font-bold uppercase tracking-widest">
-                Secure OTP Verification Protocol 
+                Secure OTP Verification Protocol
               </p>
             </div>
           </div>
@@ -565,10 +565,10 @@ const App: React.FC = () => {
       </div>
 
       {showSettings && (
-        <SettingsModal 
-          user={currentUser || { _id: 'guest', role: UserRole.GUEST, name: 'Guest', username: 'guest' } as User} 
-          onClose={() => setShowSettings(false)} 
-          onUpdate={(updated) => { if(currentUser) setCurrentUser(updated); }}
+        <SettingsModal
+          user={currentUser || { _id: 'guest', role: UserRole.GUEST, name: 'Guest', username: 'guest' } as User}
+          onClose={() => setShowSettings(false)}
+          onUpdate={(updated) => { if (currentUser) setCurrentUser(updated); }}
           onLogout={handleLogout}
           isDarkMode={isDarkMode}
           onToggleTheme={() => setIsDarkMode(!isDarkMode)}
