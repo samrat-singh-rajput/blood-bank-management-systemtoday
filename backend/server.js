@@ -164,6 +164,9 @@ async function sendOTPEmail(email, otp) {
 // Universal API.php endpoint router handler
 app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
   if (!db) {
+    await connectDB();
+  }
+  if (!db) {
     return res.status(503).json({ error: "Database not connected. Please check server MONGODB_URI configuration." });
   }
 
@@ -640,3 +643,5 @@ app.listen(PORT, async () => {
   console.log(`Server listening on port ${PORT}`);
   await connectDB();
 });
+
+export default app;
