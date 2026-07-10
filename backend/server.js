@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { MongoClient, ObjectId } from 'mongodb';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
+import { sendUnifiedOTP, verifyBrevoAccount, sendBrevoEmailOTP, sendBrevoSMSOTP } from './services/brevoService.js';
 
 dotenv.config();
 
@@ -125,40 +126,10 @@ function toIdQuery(id) {
   return { _id: id };
 }
 
-// Nodemailer SMTP OTP sender
-async function sendOTPEmail(email, otp) {
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT || '587');
-  const user = process.env.SMTP_USER || 'sasrajputchauhan@gmail.com';
-  const pass = process.env.SMTP_PASS || 'jqkv wdxb mepj bpfh';
-  const fromEmail = process.env.SMTP_FROM_EMAIL || 'sasrajputchauhan@gmail.com';
-  const fromName = process.env.SMTP_FROM_NAME || 'Blood Bank Project';
-
-  const transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
-
-  const mailOptions = {
-    from: `"${fromName}" <${fromEmail}>`,
-    to: email,
-    subject: 'Your OTP for Blood Bank Registration',
-    html: `Your one-time password (OTP) for registration is: <b>${otp}</b><br><br>It will expire in 5 minutes.<br><br>Please do not share this code with anyone.`,
-    text: `Your one-time password (OTP) for registration is: ${otp}\n\nIt will expire in 5 minutes.\n\nPlease do not share this code with anyone.`
-  };
-
-  try {
-    await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error("Nodemailer failed to send OTP:", error.message);
-    return false;
-  }
+// Smart Brevo API / SMTP OTP sender
+async function sendOTPEmail(email, otp, phone = null, name = 'Valued User') {
+  const result = await sendUnifiedOTP({ email, phone, otp, name });
+  return result;
 }
 
 // Universal API.php endpoint router handler
@@ -300,12 +271,35 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
 
         console.log(`[OTP DEBUG] Sent OTP ${otp} to phone ${phone} / email ${email}`);
 
-        const mailResult = await sendOTPEmail(email, otp);
-        if (mailResult) {
-          res.json({ success: true, message: "OTP sent successfully to your email." });
+        const deliveryResult = await sendOTPEmail(email, otp, phone);
+        if (deliveryResult && deliveryResult.success) {
+          res.json({
+            success: true,
+            message: `OTP sent successfully via ${deliveryResult.provider.toUpperCase()}. Please check your email.`,
+            provider: deliveryResult.provider,
+            messageId: deliveryResult.messageId,
+            debug_otp: deliveryResult.provider === 'simulation' ? otp : undefined
+          });
         } else {
           res.json({ success: true, message: "OTP sent (Simulated - check server console log).", debug_otp: otp });
         }
+        break;
+      }
+
+      case 'test_brevo': {
+        const { email, phone, otp = '123456', mode = 'email', name = 'Test Recipient' } = req.body;
+        const accountCheck = await verifyBrevoAccount();
+        if (mode === 'sms' && phone) {
+          const smsRes = await sendBrevoSMSOTP({ phone, otp });
+          return res.json({ account: accountCheck, delivery: smsRes });
+        } else if (email) {
+          const emailRes = await sendBrevoEmailOTP({ email, name, otp });
+          return res.json({ account: accountCheck, delivery: emailRes });
+        }
+        res.json({
+          account: accountCheck,
+          message: "Pass email or phone in JSON body ({ action: 'test_brevo', email: 'test@example.com', otp: '123456' }) to test Brevo OTP delivery."
+        });
         break;
       }
 
