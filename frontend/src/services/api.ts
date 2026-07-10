@@ -232,7 +232,7 @@ export const API = {
     if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('complete_signup', 'POST', data);
-        if (res && !res.error) return res;
+        if (res && !res.error && res.user) return res.user;
         if (res && res.error) throw new Error(res.error);
       } catch (err: any) {
         throw new Error(err.message);
