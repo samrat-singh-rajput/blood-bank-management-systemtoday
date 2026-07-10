@@ -170,7 +170,7 @@ async function seedDatabase() {
 
 // Helper: robust ID query builder
 function toIdQuery(id) {
-  if (!id) return {};
+  if (!id) return { _id: 'NON_EXISTENT_ID_SAFE_FALLBACK' };
   if (typeof id === 'string' && id.length === 24 && /^[0-9a-fA-F]{24}$/.test(id)) {
     return { _id: new ObjectId(id) };
   }
