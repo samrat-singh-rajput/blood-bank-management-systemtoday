@@ -19,24 +19,48 @@ const MONGODB_URI = process.env.MONGODB_URI;
 let dbClient = null;
 let db = null;
 
-// Connect to MongoDB
+// Connect to MongoDB Atlas (with Render / OpenSSL 3 cloud compatibility)
 async function connectDB() {
   try {
     if (!MONGODB_URI || MONGODB_URI.includes('your_username')) {
       throw new Error("Invalid MONGODB_URI");
     }
-    dbClient = new MongoClient(MONGODB_URI);
+    const clientOptions = {
+      serverApi: {
+        version: '1',
+        strict: true,
+        deprecationErrors: true
+      },
+      connectTimeoutMS: 20000,
+      socketTimeoutMS: 45000
+    };
+    dbClient = new MongoClient(MONGODB_URI, clientOptions);
     await dbClient.connect();
     db = dbClient.db('bloodbank_system');
-    console.log("Connected to MongoDB Atlas successfully.");
+    console.log("✅ Connected to MongoDB Atlas successfully.");
     await seedDatabase();
   } catch (error) {
-    console.error("Failed to connect to MongoDB Atlas:", error.message);
-    console.warn("\n========================================================");
-    console.warn("WARNING: MONGODB_URI environment variable is not configured correctly.");
-    console.warn("Please configure your actual MongoDB Atlas connection string in .env");
-    console.warn("Server is running, but database operations will fail.");
-    console.warn("========================================================\n");
+    console.error("❌ Failed to connect to MongoDB Atlas:", error.message);
+
+    if (error.message.includes('alert number 80') || error.message.includes('tlsv1 alert internal error') || error.message.includes('SSL routines')) {
+      console.warn("\n=================================================================================");
+      console.warn("🚨 MONGODB ATLAS SSL ALERT 80 (IP ACCESS LIST / TLS HANDSHAKE BLOCKED)");
+      console.warn("=================================================================================");
+      console.warn("MongoDB Atlas rejected the TLS connection from your Render server IP.");
+      console.warn("TO FIX THIS ON MONGODB ATLAS:");
+      console.warn("  1. Log into MongoDB Atlas (https://cloud.mongodb.com/)");
+      console.warn("  2. In the left sidebar under 'Security', click 'Network Access'");
+      console.warn("  3. Click '+ ADD IP ADDRESS'");
+      console.warn("  4. Click 'ALLOW ACCESS FROM ANYWHERE' (sets IP address to 0.0.0.0/0)");
+      console.warn("  5. Click 'Confirm' and wait 1-2 minutes for Atlas to deploy the rule.");
+      console.warn("=================================================================================\n");
+    } else {
+      console.warn("\n========================================================");
+      console.warn("WARNING: MONGODB_URI environment variable is not configured correctly.");
+      console.warn("Please configure your actual MongoDB Atlas connection string in Render Environment Variables.");
+      console.warn("Server is running, but database operations will fail.");
+      console.warn("========================================================\n");
+    }
   }
 }
 
