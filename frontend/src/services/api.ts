@@ -6,6 +6,10 @@ const getBaseUrl = () => {
   if (import.meta && import.meta.env && import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
+  // When deployed on Render or any cloud domain, automatically call the same origin's API endpoint
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return `${window.location.origin}/api.php`;
+  }
   const ip = localStorage.getItem('bloodbank_server_ip') || 'localhost:5000';
   if (ip.includes('api.php')) return ip.startsWith('http') ? ip : `http://${ip}`;
   const path = ip.includes(':5000') ? ip : (ip.includes('/backend') ? ip : `${ip}/backend`);

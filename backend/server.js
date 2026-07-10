@@ -1,12 +1,17 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { MongoClient, ObjectId } from 'mongodb';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
 import { sendUnifiedOTP, verifyBrevoAccount, sendBrevoEmailOTP, sendBrevoSMSOTP } from './services/brevoService.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
@@ -296,16 +301,23 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
         console.log(`[OTP DEBUG] Sent OTP ${otp} to phone ${phone} / email ${email}`);
 
         const deliveryResult = await sendOTPEmail(email, otp, phone);
-        if (deliveryResult && deliveryResult.success) {
+        if (deliveryResult && deliveryResult.success && deliveryResult.provider !== 'simulation') {
           res.json({
             success: true,
-            message: `OTP sent successfully via ${deliveryResult.provider.toUpperCase()}. Please check your email.`,
+            message: `OTP has been sent to ${email}. Please check your inbox and spam folder.`,
             provider: deliveryResult.provider,
-            messageId: deliveryResult.messageId,
-            debug_otp: otp
+            messageId: deliveryResult.messageId
+          });
+        } else if (deliveryResult && deliveryResult.success && deliveryResult.provider === 'simulation') {
+          // If neither Brevo nor SMTP is configured on Render, warn clearly
+          res.json({
+            success: true,
+            message: `OTP sent to ${email}. (Note: Configure BREVO_API_KEY on Render for live email delivery).`
           });
         } else {
-          res.json({ success: true, message: "OTP sent (Simulated - check server console log).", debug_otp: otp });
+          res.status(500).json({
+            error: `Failed to deliver OTP email to ${email}. Please check email configuration.`
+          });
         }
         break;
       }
@@ -651,9 +663,20 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
   }
 });
 
-// Root check route
-app.get('/', (req, res) => {
-  res.send('Blood Bank Express Backend Server is running.');
+// Serve frontend build static files in production / single-server deployment
+const frontendBuildPath = path.join(__dirname, '../frontend/dist');
+app.use(express.static(frontendBuildPath));
+
+// SPA catch-all route (serves React app for non-API routes)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api') || req.path.includes('api.php')) {
+    return next();
+  }
+  res.sendFile(path.join(frontendBuildPath, 'index.html'), (err) => {
+    if (err) {
+      res.status(200).send('Blood Bank Express Backend Server is running.');
+    }
+  });
 });
 
 // Start Express Server
