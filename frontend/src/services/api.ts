@@ -3,17 +3,25 @@ import { User, UserRole, BloodStock, DonationRequest, Appointment, Feedback, Sec
 import { db } from "./mongoClient";
 
 const getBaseUrl = () => {
+  let url = '';
   if (import.meta && import.meta.env && import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    url = import.meta.env.VITE_API_URL;
+  } else {
+    const customIp = localStorage.getItem('bloodbank_server_ip');
+    if (customIp && customIp !== 'localhost:5000') {
+      if (customIp.includes('api.php')) {
+        url = customIp.startsWith('http') ? customIp : `http://${customIp}`;
+      } else {
+        const path = customIp.includes(':5000') ? customIp : (customIp.includes('/backend') ? customIp : `${customIp}/backend`);
+        url = path.startsWith('http') ? `${path}/api.php` : `http://${path}/api.php`;
+      }
+    }
   }
-  const customIp = localStorage.getItem('bloodbank_server_ip');
-  if (customIp && customIp !== 'localhost:5000') {
-    if (customIp.includes('api.php')) return customIp.startsWith('http') ? customIp : `http://${customIp}`;
-    const path = customIp.includes(':5000') ? customIp : (customIp.includes('/backend') ? customIp : `${customIp}/backend`);
-    return path.startsWith('http') ? `${path}/api.php` : `http://${path}/api.php`;
+  
+  if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+    return 'https://blood-bank-management-systemtoday.onrender.com/api.php';
   }
-  // Default to live Render backend for Vercel, Localhost, and all browsers
-  return 'https://blood-bank-management-systemtoday.onrender.com/api.php';
+  return url;
 };
 
 const getStorageMode = () => {
