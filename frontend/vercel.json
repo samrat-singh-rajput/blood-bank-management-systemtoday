@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api.php",
+      "destination": "https://blood-bank-management-systemtoday.onrender.com/api.php"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://blood-bank-management-systemtoday.onrender.com/api/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

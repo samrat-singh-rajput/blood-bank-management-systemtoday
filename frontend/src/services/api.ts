@@ -6,9 +6,16 @@ const getBaseUrl = () => {
   if (import.meta && import.meta.env && import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // When deployed on Render or any cloud domain, automatically call the same origin's API endpoint
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `${window.location.origin}/api.php`;
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    // If frontend is hosted on Vercel (.vercel.app), connect directly to the live Render backend
+    if (host.includes('vercel.app')) {
+      return 'https://blood-bank-management-systemtoday.onrender.com/api.php';
+    }
+    // When deployed on Render or any same-origin cloud domain
+    if (host !== 'localhost' && host !== '127.0.0.1') {
+      return `${window.location.origin}/api.php`;
+    }
   }
   const ip = localStorage.getItem('bloodbank_server_ip') || 'localhost:5000';
   if (ip.includes('api.php')) return ip.startsWith('http') ? ip : `http://${ip}`;
