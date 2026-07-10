@@ -131,12 +131,7 @@ export const db = {
 db.users.seed([
   { username: 'rajput', password: 'rajput', role: 'ADMIN', name: 'System Admin', email: 'admin@bloodbank.com', status: 'Active', is_verified: true, joinDate: '2023-10-01' },
   { username: 'anuj', password: 'singh', role: 'DONOR', name: 'Anuj Donor', email: 'anuj_donor@example.com', bloodType: 'A+', status: 'Active', is_verified: true, joinDate: '2023-10-01', phone: '+91 98765 43210', location: 'New Delhi' },
-  { username: 'vikram', password: 'vikram', role: 'DONOR', name: 'Vikram Sharma', email: 'vikram.sharma@example.com', bloodType: 'O+', status: 'Active', is_verified: true, joinDate: '2024-01-15', phone: '+91 98111 22334', location: 'New Delhi' },
-  { username: 'priya', password: 'priya', role: 'DONOR', name: 'Priya Patel', email: 'priya.patel@example.com', bloodType: 'B+', status: 'Active', is_verified: true, joinDate: '2024-03-10', phone: '+91 98222 33445', location: 'Mumbai' },
-  { username: 'rohit', password: 'rohit', role: 'DONOR', name: 'Rohit Verma', email: 'rohit.verma@example.com', bloodType: 'AB-', status: 'Active', is_verified: true, joinDate: '2024-04-20', phone: '+91 98333 44556', location: 'Bangalore' },
-  { username: 'amit', password: 'amit', role: 'DONOR', name: 'Amit Kumar', email: 'amit.kumar@example.com', bloodType: 'O-', status: 'Active', is_verified: true, joinDate: '2024-05-12', phone: '+91 98555 66778', location: 'Hyderabad' },
-  { username: 'anuj', password: 'anuj', role: 'USER', name: 'Anuj User', email: 'anuj_user@example.com', bloodType: 'B-', status: 'Active', is_verified: true, joinDate: '2023-10-01', phone: '+91 99999 88888', location: 'Mumbai' },
-  { username: 'sneha', password: 'sneha', role: 'USER', name: 'Sneha Gupta', email: 'sneha.gupta@example.com', bloodType: 'A-', status: 'Active', is_verified: true, joinDate: '2024-02-18', phone: '+91 98444 55667', location: 'Kolkata' }
+  { username: 'anuj', password: 'anuj', role: 'USER', name: 'Anuj User', email: 'anuj_user@example.com', bloodType: 'B-', status: 'Active', is_verified: true, joinDate: '2023-10-01', phone: '+91 99999 88888', location: 'Mumbai' }
 ]);
 
 // Seed Default Blood Stocks
@@ -157,23 +152,6 @@ db.hospitals.seed([
   { name: 'Apollo Super Speciality Care', city: 'Mumbai', address: '66 Mathura Road, Sarita Vihar', phone: '+91 22 2692 5000', email: 'apollo_mumbai@example.com', status: 'Active' },
   { name: 'Fortis Health Center', city: 'Bangalore', address: '154/9 Bannerghatta Road', phone: '+91 80 6621 4444', email: 'fortis_blr@example.com', status: 'Active' },
   { name: 'Max Care Hospital', city: 'Kolkata', address: 'Plot No 34, Salt Lake City', phone: '+91 33 2355 6000', email: 'max_kol@example.com', status: 'Active' }
-]);
-
-// Seed Default Donation & Patient Requests
-db.requests.seed([
-  { donorName: 'Anuj Donor', bloodType: 'A+', type: 'Donation', status: 'Pending', date: new Date().toISOString().split('T')[0], location: 'New Delhi', phone: '+91 98765 43210', urgency: 'Medium', units: 1 },
-  { donorName: 'Vikram Sharma', bloodType: 'O+', type: 'Donation', status: 'Completed', date: '2026-07-09', location: 'New Delhi', phone: '+91 98111 22334', urgency: 'Medium', units: 2 },
-  { donorName: 'Priya Patel', bloodType: 'B+', type: 'Donation', status: 'Pending', date: new Date().toISOString().split('T')[0], location: 'Mumbai', phone: '+91 98222 33445', urgency: 'Medium', units: 1 },
-  { donorName: 'Rohit Verma', bloodType: 'AB-', type: 'Donation', status: 'Completed', date: '2026-07-08', location: 'Bangalore', phone: '+91 98333 44556', urgency: 'Low', units: 1 },
-  { donorName: 'Amit Kumar', bloodType: 'O-', type: 'Donation', status: 'Pending', date: new Date().toISOString().split('T')[0], location: 'Hyderabad', phone: '+91 98555 66778', urgency: 'Medium', units: 1 },
-  { donorName: 'Sneha Gupta', bloodType: 'A-', type: 'Request', status: 'Pending', date: new Date().toISOString().split('T')[0], hospital: 'AIIMS Super Speciality Hospital', location: 'New Delhi', phone: '+91 98444 55667', urgency: 'Critical', units: 2 },
-  { donorName: 'Anuj User', bloodType: 'B-', type: 'Request', status: 'Approved', date: '2026-07-09', hospital: 'Apollo Super Speciality Care', location: 'Mumbai', phone: '+91 99999 88888', urgency: 'Medium', units: 1 }
-]);
-
-// Seed Default Feedback
-db.feedback.seed([
-  { userId: 'donor_default', userRole: 'DONOR', message: 'I would like to organize a community blood donation drive in Delhi.', date: '2026-07-09' },
-  { userId: 'user_default', userRole: 'USER', message: 'Thank you for the quick emergency key assistance!', date: '2026-07-08', reply: 'You are very welcome! Stay safe.' }
 ]);
 
 // Seed Default Security Logs

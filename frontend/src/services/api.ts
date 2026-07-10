@@ -24,36 +24,38 @@ const getStorageMode = () => {
   return mode === 'mysql' ? 'mongodb' : mode;
 };
 
-const fetchAPI = async (action: string, method: string = 'GET', data: any = null) => {
+const fetchAPI = async (action: string, method: string = 'GET', data: any = null, retries: number = 2): Promise<any> => {
   const baseUrl = getBaseUrl();
-  const ip = localStorage.getItem('bloodbank_server_ip');
   
   // If mode is 'local', skip the network entirely
   if (getStorageMode() === 'local') return null;
   
-  try {
-    const url = new URL(baseUrl);
-    url.searchParams.append('action', action);
-    
-    const options: RequestInit = {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-    };
-    
-    if (data && method !== 'GET') options.body = JSON.stringify(data);
-    
-    const response = await fetch(url.toString(), options);
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Server returned ${response.status}: ${errorText.substring(0, 100)}`);
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const url = new URL(baseUrl);
+      url.searchParams.append('action', action);
+      
+      const options: RequestInit = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+      };
+      
+      if (data && method !== 'GET') options.body = JSON.stringify(data);
+      
+      const response = await fetch(url.toString(), options);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server returned ${response.status}: ${errorText.substring(0, 100)}`);
+      }
+      
+      const result = await response.json();
+      if (result.error) throw new Error(result.error);
+      return result;
+    } catch (error: any) {
+      console.warn(`API Error (${action}) [attempt ${attempt + 1}/${retries + 1}]:`, error.message);
+      if (attempt === retries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1500));
     }
-    
-    const result = await response.json();
-    if (result.error) throw new Error(result.error);
-    return result;
-  } catch (error: any) {
-    console.warn(`API Error (${action}):`, error.message);
-    throw error; // Rethrow to let the caller handle the specific message
   }
 };
 
@@ -255,11 +257,11 @@ export const API = {
     if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('get_users');
-        if (res && Array.isArray(res.users) && res.users.length > 0) return res.users;
+        if (res && Array.isArray(res.users)) return res.users;
       } catch (e) {
         console.error("MongoDB Atlas Users fetch failed:", e);
       }
-      return await db.users.find();
+      return [];
     }
     return db.users.find();
   },
@@ -268,11 +270,11 @@ export const API = {
     if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('get_requests');
-        if (res && Array.isArray(res.requests) && res.requests.length > 0) return res.requests;
+        if (res && Array.isArray(res.requests)) return res.requests;
       } catch (e) {
         console.error("MongoDB Atlas Request fetch failed:", e);
       }
-      return await db.requests.find();
+      return [];
     }
     return db.requests.find();
   },
@@ -281,11 +283,11 @@ export const API = {
     if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('get_hospitals');
-        if (res && Array.isArray(res.hospitals) && res.hospitals.length > 0) return res.hospitals;
+        if (res && Array.isArray(res.hospitals)) return res.hospitals;
       } catch (e) {
         console.error("MongoDB Atlas Hospitals fetch failed:", e);
       }
-      return await db.hospitals.find();
+      return [];
     }
     return db.hospitals.find();
   },
@@ -294,11 +296,11 @@ export const API = {
     if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('get_feedbacks');
-        if (res && Array.isArray(res.feedback) && res.feedback.length > 0) return res.feedback;
+        if (res && Array.isArray(res.feedback)) return res.feedback;
       } catch (e) {
         console.error("MongoDB Atlas Feedbacks fetch failed:", e);
       }
-      return await db.feedback.find();
+      return [];
     }
     return db.feedback.find();
   },
@@ -307,11 +309,11 @@ export const API = {
     if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('get_stocks');
-        if (res && Array.isArray(res.stocks) && res.stocks.length > 0) return res.stocks;
+        if (res && Array.isArray(res.stocks)) return res.stocks;
       } catch (e) {
         console.error("MongoDB Atlas Stocks fetch failed:", e);
       }
-      return await db.stocks.find();
+      return [];
     }
     return db.stocks.find();
   },
@@ -320,11 +322,11 @@ export const API = {
     if (getStorageMode() === 'mongodb') {
       try {
         const res = await fetchAPI('get_logs');
-        if (res && Array.isArray(res.logs) && res.logs.length > 0) return res.logs;
+        if (res && Array.isArray(res.logs)) return res.logs;
       } catch (e) {
         console.error("MongoDB Atlas Security Logs fetch failed:", e);
       }
-      return await db.logs.find();
+      return [];
     }
     return db.logs.find();
   },
