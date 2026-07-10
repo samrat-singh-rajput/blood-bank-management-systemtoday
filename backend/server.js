@@ -302,7 +302,7 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
             message: `OTP sent successfully via ${deliveryResult.provider.toUpperCase()}. Please check your email.`,
             provider: deliveryResult.provider,
             messageId: deliveryResult.messageId,
-            debug_otp: deliveryResult.provider === 'simulation' ? otp : undefined
+            debug_otp: otp
           });
         } else {
           res.json({ success: true, message: "OTP sent (Simulated - check server console log).", debug_otp: otp });

@@ -325,6 +325,31 @@ const App: React.FC = () => {
             <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Enter OTP</h2>
             <p className="text-sm text-gray-500 font-medium">We've sent a code to your email: <span className="text-blood-600 font-bold">{regDetails.email}</span></p>
 
+            {debugOTP && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-2xl text-left animate-fade-in shadow-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                    <span>⚡</span> Instant Dev/Demo OTP Code:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setRegOTP(debugOTP)}
+                    className="text-xs font-black bg-amber-600 text-white px-3 py-1 rounded-lg hover:bg-amber-700 transition shadow-sm"
+                  >
+                    Auto-Fill
+                  </button>
+                </div>
+                <div className="mt-2 text-center py-2 bg-white/80 dark:bg-gray-800/80 rounded-xl border border-amber-200/50 dark:border-amber-700/50">
+                  <span className="text-2xl font-black text-amber-900 dark:text-amber-100 tracking-[0.4em] font-mono">
+                    {debugOTP}
+                  </span>
+                </div>
+                <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-2 leading-relaxed">
+                  If email delivery is delayed or API keys are not yet configured on Render, use this code to continue signing up immediately.
+                </p>
+              </div>
+            )}
+
             <div className="text-left space-y-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">6-Digit Code</label>
               <input
