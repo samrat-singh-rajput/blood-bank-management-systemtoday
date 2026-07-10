@@ -358,6 +358,7 @@ async function sendSMTPOTP({ email, name, otp }) {
  * @returns {Promise<{success: boolean, provider: string, details?: Object}>}
  */
 export async function sendUnifiedOTP({ email, phone, otp, name = 'User' }) {
+  let lastBrevoError = null;
   // 1. Try Brevo REST API v3 first if API key is present
   if (process.env.BREVO_API_KEY && !process.env.BREVO_API_KEY.includes('your_brevo_api_key_here')) {
     const brevoResult = await sendBrevoEmailOTP({ email, name, otp });
@@ -368,7 +369,8 @@ export async function sendUnifiedOTP({ email, phone, otp, name = 'User' }) {
         messageId: brevoResult.messageId
       };
     }
-    console.warn('[Brevo Service] Brevo API attempt returned error, attempting fallback to SMTP...', brevoResult?.error);
+    lastBrevoError = brevoResult?.error || 'Brevo API request failed';
+    console.warn('[Brevo Service] Brevo API attempt returned error:', lastBrevoError);
   }
 
   // 2. Fallback to Nodemailer SMTP
@@ -378,6 +380,14 @@ export async function sendUnifiedOTP({ email, phone, otp, name = 'User' }) {
       success: true,
       provider: 'smtp_nodemailer',
       messageId: smtpResult.messageId
+    };
+  }
+
+  // If Brevo API key was present but failed, return the exact Brevo error message
+  if (lastBrevoError) {
+    return {
+      success: false,
+      error: `Brevo Email Delivery Failed: ${lastBrevoError}. Ensure BREVO_SENDER_EMAIL is verified in Brevo Dashboard.`
     };
   }
 

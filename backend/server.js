@@ -315,8 +315,8 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
             message: `OTP sent to ${email}. (Note: Configure BREVO_API_KEY on Render for live email delivery).`
           });
         } else {
-          res.status(500).json({
-            error: `Failed to deliver OTP email to ${email}. Please check email configuration.`
+          res.status(400).json({
+            error: deliveryResult?.error || `Failed to deliver OTP email to ${email}. Please verify BREVO_SENDER_EMAIL in Brevo.`
           });
         }
         break;

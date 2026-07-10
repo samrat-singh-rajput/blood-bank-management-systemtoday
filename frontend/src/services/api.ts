@@ -24,7 +24,10 @@ const getBaseUrl = () => {
 };
 
 const getStorageMode = () => {
-  const mode = localStorage.getItem('bloodbank_storage_mode') || 'local';
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'mongodb';
+  }
+  const mode = localStorage.getItem('bloodbank_storage_mode') || 'mongodb';
   return mode === 'mysql' ? 'mongodb' : mode;
 };
 
@@ -256,46 +259,80 @@ export const API = {
   },
 
   getUsers: async (): Promise<User[]> => {
-    const res = await fetchAPI('get_users');
-    if (res && res.users) return res.users;
+    if (getStorageMode() === 'mongodb') {
+      try {
+        const res = await fetchAPI('get_users');
+        if (res && res.users) return res.users;
+      } catch (e) {
+        console.error("MongoDB Atlas Users fetch failed:", e);
+      }
+      return [];
+    }
     return db.users.find();
   },
 
   getDonationRequests: async (): Promise<DonationRequest[]> => {
-    try {
-      const res = await fetchAPI('get_requests');
-      if (res && res.requests) return res.requests;
-    } catch (e) {
-      console.warn("MongoDB Atlas Request fetch failed");
+    if (getStorageMode() === 'mongodb') {
+      try {
+        const res = await fetchAPI('get_requests');
+        if (res && res.requests) return res.requests;
+      } catch (e) {
+        console.error("MongoDB Atlas Request fetch failed:", e);
+      }
+      return [];
     }
     return db.requests.find();
   },
 
   getHospitals: async (): Promise<Hospital[]> => {
-    const res = await fetchAPI('get_hospitals');
-    if (res && res.hospitals) return res.hospitals;
+    if (getStorageMode() === 'mongodb') {
+      try {
+        const res = await fetchAPI('get_hospitals');
+        if (res && res.hospitals) return res.hospitals;
+      } catch (e) {
+        console.error("MongoDB Atlas Hospitals fetch failed:", e);
+      }
+      return [];
+    }
     return db.hospitals.find();
   },
 
   getFeedbacks: async (): Promise<Feedback[]> => {
-    const res = await fetchAPI('get_feedbacks');
-    if (res && res.feedback) return res.feedback;
+    if (getStorageMode() === 'mongodb') {
+      try {
+        const res = await fetchAPI('get_feedbacks');
+        if (res && res.feedback) return res.feedback;
+      } catch (e) {
+        console.error("MongoDB Atlas Feedbacks fetch failed:", e);
+      }
+      return [];
+    }
     return db.feedback.find();
   },
 
   getBloodStocks: async (): Promise<BloodStock[]> => {
-    try {
-      const res = await fetchAPI('get_stocks');
-      if (res && res.stocks) return res.stocks;
-    } catch (e) {
-      console.warn("MongoDB Atlas Stocks fetch failed");
+    if (getStorageMode() === 'mongodb') {
+      try {
+        const res = await fetchAPI('get_stocks');
+        if (res && res.stocks) return res.stocks;
+      } catch (e) {
+        console.error("MongoDB Atlas Stocks fetch failed:", e);
+      }
+      return [];
     }
     return db.stocks.find();
   },
 
   getSecurityLogs: async (): Promise<SecurityLog[]> => {
-    const res = await fetchAPI('get_logs');
-    if (res && res.logs) return res.logs;
+    if (getStorageMode() === 'mongodb') {
+      try {
+        const res = await fetchAPI('get_logs');
+        if (res && res.logs) return res.logs;
+      } catch (e) {
+        console.error("MongoDB Atlas Security Logs fetch failed:", e);
+      }
+      return [];
+    }
     return db.logs.find();
   },
   
