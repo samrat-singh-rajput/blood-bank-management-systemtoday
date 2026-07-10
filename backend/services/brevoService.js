@@ -307,10 +307,19 @@ export async function sendBrevoSMSOTP({ phone, otp, sender = 'BLDBNK' }) {
 async function sendSMTPOTP({ email, name, otp }) {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT || '587');
-  const user = process.env.SMTP_USER || 'sasrajputchauhan@gmail.com';
-  const pass = process.env.SMTP_PASS || 'jqkv wdxb mepj bpfh';
-  const fromEmail = process.env.SMTP_FROM_EMAIL || 'sasrajputchauhan@gmail.com';
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const fromEmail = process.env.SMTP_FROM_EMAIL || user || 'sasrajputchauhan@gmail.com';
   const fromName = process.env.SMTP_FROM_NAME || 'Blood Bank Project';
+
+  if (!user || !pass) {
+    console.error('[SMTP Fallback Error] SMTP credentials (SMTP_USER or SMTP_PASS) not configured in environment variables.');
+    return {
+      success: false,
+      error: 'SMTP credentials (SMTP_USER/SMTP_PASS) not configured in environment variables.',
+      provider: 'smtp_nodemailer'
+    };
+  }
 
   const transporter = nodemailer.createTransport({
     host,

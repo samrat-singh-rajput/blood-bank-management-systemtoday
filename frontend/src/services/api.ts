@@ -147,8 +147,9 @@ export const API = {
       try {
         const res = await fetchAPI('send_otp', 'POST', { phone, email });
         if (res && res.success) return res;
+        if (res && res.error) throw new Error(res.error);
       } catch (err: any) {
-        throw new Error(`MongoDB Atlas Error: ${err.message}. Ensure backend server is running on port 5000.`);
+        throw new Error(err.message);
       }
     }
 
@@ -191,8 +192,9 @@ export const API = {
       try {
         const res = await fetchAPI('verify_otp', 'POST', { phone, otp });
         if (res && res.success) return res;
+        if (res && res.error) throw new Error(res.error);
       } catch (err: any) {
-        throw new Error(`MongoDB Atlas Verification Error: ${err.message}`);
+        throw new Error(err.message);
       }
     }
 
@@ -223,8 +225,9 @@ export const API = {
       try {
         const res = await fetchAPI('complete_signup', 'POST', data);
         if (res && !res.error) return res;
+        if (res && res.error) throw new Error(res.error);
       } catch (err: any) {
-        throw new Error(`MongoDB Atlas Signup Error: ${err.message}`);
+        throw new Error(err.message);
       }
     }
 

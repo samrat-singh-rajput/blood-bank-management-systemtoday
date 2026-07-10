@@ -13,8 +13,30 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express();
-app.use(cors());
+const allowedOrigins = [
+  'https://blood-bank-management-system-ecru.vercel.app',
+  'https://blood-bank-management-system-git-main-rajput6.vercel.app',
+  'https://blood-bank-management-system-61whl3217-rajput6.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -161,6 +183,14 @@ async function sendOTPEmail(email, otp, phone = null, name = 'Valued User') {
   return result;
 }
 
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    database: db ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Universal API.php endpoint router handler
 app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
   if (!db) {
@@ -205,9 +235,12 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
           
           const profile = await response.json();
           
-          const clientID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
-          if (clientID && profile.aud !== clientID) {
-            throw new Error("Google token audience mismatch");
+          let clientID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+          if (clientID) {
+            clientID = clientID.trim().replace(/^['"]|['"]$/g, '');
+            if (profile.aud !== clientID && profile.azp !== clientID) {
+              throw new Error(`Google token audience mismatch. Expected: ${clientID}, Aud: ${profile.aud}, Azp: ${profile.azp}`);
+            }
           }
           
           const email = profile.email;
