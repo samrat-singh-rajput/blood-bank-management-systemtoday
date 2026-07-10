@@ -6,21 +6,14 @@ const getBaseUrl = () => {
   if (import.meta && import.meta.env && import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname;
-    // If frontend is hosted on Vercel (.vercel.app), connect directly to the live Render backend
-    if (host.includes('vercel.app')) {
-      return 'https://blood-bank-management-systemtoday.onrender.com/api.php';
-    }
-    // When deployed on Render or any same-origin cloud domain
-    if (host !== 'localhost' && host !== '127.0.0.1') {
-      return `${window.location.origin}/api.php`;
-    }
+  const customIp = localStorage.getItem('bloodbank_server_ip');
+  if (customIp && customIp !== 'localhost:5000') {
+    if (customIp.includes('api.php')) return customIp.startsWith('http') ? customIp : `http://${customIp}`;
+    const path = customIp.includes(':5000') ? customIp : (customIp.includes('/backend') ? customIp : `${customIp}/backend`);
+    return path.startsWith('http') ? `${path}/api.php` : `http://${path}/api.php`;
   }
-  const ip = localStorage.getItem('bloodbank_server_ip') || 'localhost:5000';
-  if (ip.includes('api.php')) return ip.startsWith('http') ? ip : `http://${ip}`;
-  const path = ip.includes(':5000') ? ip : (ip.includes('/backend') ? ip : `${ip}/backend`);
-  return path.startsWith('http') ? `${path}/api.php` : `http://${path}/api.php`;
+  // Default to live Render backend for Vercel, Localhost, and all browsers
+  return 'https://blood-bank-management-systemtoday.onrender.com/api.php';
 };
 
 const getStorageMode = () => {
