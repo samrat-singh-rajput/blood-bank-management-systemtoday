@@ -257,7 +257,7 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
             user = {
               _id: id,
               username: email.split('@')[0],
-              role: role || 'USER',
+              role: (role === 'ADMIN') ? 'USER' : (role || 'USER'),
               name: name || email.split('@')[0],
               email: email.toLowerCase(),
               googleId: googleId,
@@ -421,7 +421,7 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
           _id: id,
           username,
           password: pass,
-          role: role || 'USER',
+          role: (role === 'ADMIN') ? 'USER' : (role || 'USER'),
           name: name || username,
           email: email.toLowerCase(),
           phone,
@@ -664,6 +664,10 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
           if (key !== 'userId' && key !== 'action' && key !== '_id' && typeof val !== 'object') {
             if (key === 'password') {
               updates[key] = bcrypt.hashSync(val, 10);
+            } else if (key === 'role') {
+              if (val !== 'ADMIN') {
+                updates[key] = val;
+              }
             } else {
               updates[key] = val;
             }
