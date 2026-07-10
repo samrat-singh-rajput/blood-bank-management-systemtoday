@@ -422,7 +422,7 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
           username,
           password: pass,
           role: (role === 'ADMIN') ? 'USER' : (role || 'USER'),
-          name: name || username,
+          name: username,
           email: email.toLowerCase(),
           phone,
           joinDate: jd,
