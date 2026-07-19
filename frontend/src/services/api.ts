@@ -32,7 +32,7 @@ const getStorageMode = () => {
   return mode === 'mysql' ? 'mongodb' : mode;
 };
 
-const fetchAPI = async (action: string, method: string = 'GET', data: any = null, retries: number = 2): Promise<any> => {
+export const fetchAPI = async (action: string, method: string = 'GET', data: any = null, retries: number = 2): Promise<any> => {
   const baseUrl = getBaseUrl();
   
   // If mode is 'local', skip the network entirely

@@ -13,6 +13,7 @@ import { UserPanel } from './components/UserPanel';
 import { LandingPage } from './components/LandingPage';
 import { Button } from './components/Button';
 import { SettingsModal } from './components/SettingsModal';
+import { SamratChatbot } from './components/SamratChatbot';
 
 type ViewState = 'landing' | 'login' | 'register' | 'dashboard';
 type SignupStep = 'role' | 'mobile' | 'otp' | 'credentials';
@@ -572,7 +573,9 @@ const App: React.FC = () => {
           isDarkMode={isDarkMode}
           onToggleTheme={() => setIsDarkMode(!isDarkMode)}
         />
-      )}</div>
+      )}
+      <SamratChatbot currentUser={currentUser} currentView={currentView} />
+    </div>
   );
 };
 

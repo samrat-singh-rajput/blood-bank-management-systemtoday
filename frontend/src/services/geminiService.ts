@@ -1,38 +1,22 @@
 
-import { GoogleGenAI, Type, Modality } from "@google/genai";
+import { fetchAPI } from "./api";
 import { User, UserRole } from "../types";
 
-// Helper to get Gemini client using process.env.API_KEY directly as required by guidelines.
-const getAiClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
-};
-
-export const getHealthTips = async (userRole: string): Promise<string[]> => {
-  const ai = getAiClient();
-
+// Helper to check if we can reach backend or fallback locally
+export const getHealthTips = async (userRole: string = "Donor"): Promise<string[]> => {
   try {
-    const model = 'gemini-3-flash-preview';
-    const dateStr = new Date().toDateString();
-    const prompt = `Provide exactly 3 short, inspiring, distinct health tips or facts specifically for a blood bank system donor for today, ${dateStr}. 
-    Each tip should be a single sentence. Focus on hydration, nutrition, and the positive impact of donation. 
-    Return them as a simple list separated by newlines.`;
-
-    const response = await ai.models.generateContent({
-      model,
-      contents: prompt,
-    });
-
-    const text = response.text || "";
-    const tips = text.split('\n').map(t => t.replace(/^\d+\.\s*/, '').trim()).filter(t => t.length > 5);
-    
-    if (tips.length >= 3) return tips.slice(0, 3);
+    const response = await fetchAPI('get_health_tips', 'POST', { userRole });
+    if (response && Array.isArray(response.tips) && response.tips.length > 0) {
+      return response.tips;
+    }
+    // Fallback if API response is empty
     return [
       "Stay hydrated by drinking plenty of water throughout the day.",
       "Eat iron-rich foods like spinach and lentils to keep your levels high.",
       "Every single blood donation can save up to three lives."
     ];
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Gemini API Error (getHealthTips):", error);
     return [
       "Drink extra fluids before and after your donation.",
       "Maintain a healthy iron level in your diet.",
@@ -41,103 +25,76 @@ export const getHealthTips = async (userRole: string): Promise<string[]> => {
   }
 };
 
-export const chatWithSamrat = async (message: string, context: string, useThinking: boolean = false): Promise<string> => {
-  const ai = getAiClient();
+export interface ChatHistoryItem {
+  role: 'user' | 'model';
+  text: string;
+}
 
+export const chatWithSamrat = async (
+  message: string,
+  context: string = "",
+  useThinking: boolean = false,
+  history: ChatHistoryItem[] = []
+): Promise<string> => {
   try {
-    const model = useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
-    const systemInstruction = `You are Samrat, a friendly, intelligent, and 24/7 AI assistant for the BloodBank System. 
-    Your goal is to help Admins, Donors, and Recipients with their queries about blood donation, health, or navigating the system.
-    
-    Current User Context: ${context}
-    
-    Keep answers concise, professional, and helpful. 
-    If asked about medical advice, strictly advise consulting a doctor. 
-    Use a warm, encouraging tone.`;
-
-    const config: any = {
-      systemInstruction: systemInstruction,
-      tools: [{ googleSearch: {} }]
-    };
-
-    if (useThinking) {
-      config.thinkingConfig = { thinkingBudget: 32768 };
-    }
-
-    const response = await ai.models.generateContent({
-      model,
-      contents: message,
-      config: config
+    // First attempt through fetchAPI (which routes to /api.php or backend URL)
+    const response = await fetchAPI('chat_samrat', 'POST', {
+      message,
+      context,
+      useThinking,
+      history
     });
 
-    let text = response.text || "I didn't quite catch that. Could you rephrase?";
-    
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    if (chunks) {
-      const links = chunks
-        .map((chunk: any) => chunk.web?.uri || chunk.maps?.uri)
-        .filter(Boolean);
-      if (links.length > 0) {
-        const uniqueLinks = Array.from(new Set(links));
-        text += "\n\nSources:\n" + uniqueLinks.map(link => `- ${link}`).join("\n");
+    if (response && (response.response || response.text)) {
+      return response.response || response.text;
+    }
+
+    // Direct fallback to standalone /api/chat endpoint if fetchAPI returned null (e.g. storage mode or CORS edge case)
+    const directRes = await fetch('http://localhost:5000/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, context, useThinking, history })
+    });
+
+    if (directRes.ok) {
+      const data = await directRes.json();
+      if (data && (data.response || data.text)) {
+        return data.response || data.text;
       }
     }
 
-    return text;
+    return "My systems are currently experiencing high traffic. Please try asking again in a moment.";
   } catch (error) {
-    console.error("Samrat Error:", error);
-    return "My systems are having a moment. Please try again later.";
+    console.error("Samrat AI Chat Error:", error);
+    return "My systems are temporarily unavailable right now. Please check back shortly or consult our FAQ section.";
   }
 };
 
-export const analyzeMedicalImage = async (base64Data: string, mimeType: string): Promise<string> => {
-  const ai = getAiClient();
-
+export const analyzeMedicalImage = async (base64Data: string, mimeType: string = "image/jpeg"): Promise<string> => {
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              data: base64Data,
-              mimeType: mimeType
-            }
-          },
-          {
-            text: "Analyze this medical certificate or document for a blood bank system. Extract the blood type, date of donation, and hospital name if visible. Format the output clearly: Hospital Name: [name], Date: [date], Blood Type: [type]."
-          }
-        ]
-      }
+    const response = await fetchAPI('analyze_medical_image', 'POST', {
+      base64Data,
+      mimeType
     });
-    return response.text || "Could not analyze the image.";
+    if (response && response.text) {
+      return response.text;
+    }
+    return "Could not analyze the image from backend response.";
   } catch (error) {
     console.error("Image Analysis Error:", error);
-    return "Failed to process image.";
+    return "Failed to process image due to server unavailability.";
   }
 };
 
 export const transcribeAudio = async (base64Audio: string): Promise<string> => {
-  const ai = getAiClient();
-
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              data: base64Audio,
-              mimeType: 'audio/wav'
-            }
-          },
-          {
-            text: "Transcribe the following audio precisely."
-          }
-        ]
-      }
+    const response = await fetchAPI('transcribe_audio', 'POST', {
+      base64Audio
     });
-    return response.text || "";
+    if (response && response.text !== undefined) {
+      return response.text;
+    }
+    return "";
   } catch (error) {
     console.error("Transcription Error:", error);
     return "Failed to transcribe audio.";

@@ -6,12 +6,22 @@ import { fileURLToPath } from 'url';
 import { MongoClient, ObjectId } from 'mongodb';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
+import { GoogleGenAI } from '@google/genai';
 import { sendUnifiedOTP, verifyBrevoAccount, sendBrevoEmailOTP, sendBrevoSMSOTP } from './services/brevoService.js';
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+dotenv.config();
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+const getAiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  if (!apiKey || apiKey.includes('your_gemini_api_key')) {
+    throw new Error("Gemini API key is not configured in backend .env");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const allowedOrigins = [
   'https://blood-bank-management-system-ecru.vercel.app',
@@ -36,6 +46,7 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
+const app = express();
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -189,6 +200,76 @@ app.get('/api/health', (req, res) => {
     database: db ? 'connected' : 'disconnected',
     timestamp: new Date().toISOString()
   });
+});
+
+// Standalone secure chat endpoint (POST /api/chat)
+app.post('/api/chat', async (req, res) => {
+  const { message, context, useThinking, history = [] } = req.body;
+  if (!message) {
+    return res.status(400).json({ error: "Message is required." });
+  }
+  try {
+    const ai = getAiClient();
+    const model = useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+    const systemInstruction = `You are Samrat AI, a friendly, intelligent, and 24/7 AI assistant for the Blood Bank Management System.
+Your goal is to help Admins, Donors, and Recipients with their queries about blood donation, health, or navigating the system.
+
+You are equipped with specialized knowledge about:
+1. General conversation and greeting users warmly.
+2. Blood donation information (preparation, recovery, guidelines).
+3. Blood group compatibility (O-, O+, A+, A-, B+, B-, AB+, AB- Universal donor/recipient facts).
+4. Blood donation eligibility criteria (age 18-65, weight > 50kg, hemoglobin levels, waiting intervals of 56/90 days between donations).
+5. Emergency blood guidance (how to request blood urgently, using emergency access keys, finding nearby hospitals).
+6. Project-related assistance (navigating the dashboard, registering requests, booking appointments, uploading certificates, using peer messenger).
+7. Health-related general guidance (hydration, iron-rich diet, rest). Always include a clear disclaimer when giving health guidance: "Disclaimer: This AI guidance is for general informational purposes and is not a replacement for professional medical advice. Always consult a qualified doctor for personal health diagnosis or treatment."
+
+Current User Context: ${context || 'General Visitor'}
+
+Keep answers clear, concise, professional, and empathetic. Use markdown formatting with bullet points or bold text where helpful for readability.`;
+
+    const config = {
+      systemInstruction,
+      tools: [{ googleSearch: {} }]
+    };
+    if (useThinking) {
+      config.thinkingConfig = { thinkingBudget: 32768 };
+    }
+
+    let contents = message;
+    if (Array.isArray(history) && history.length > 0) {
+      contents = [
+        ...history.map(item => ({
+          role: item.role === 'user' ? 'user' : 'model',
+          parts: [{ text: item.text }]
+        })),
+        { role: 'user', parts: [{ text: message }] }
+      ];
+    }
+
+    const response = await ai.models.generateContent({
+      model,
+      contents,
+      config
+    });
+
+    let text = response.text || "I didn't quite catch that. Could you rephrase your question?";
+    
+    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+    if (chunks && Array.isArray(chunks)) {
+      const links = chunks
+        .map(chunk => chunk.web?.uri || chunk.maps?.uri)
+        .filter(Boolean);
+      if (links.length > 0) {
+        const uniqueLinks = Array.from(new Set(links));
+        text += "\n\nSources:\n" + uniqueLinks.map(link => `- ${link}`).join("\n");
+      }
+    }
+
+    res.json({ response: text, text });
+  } catch (error) {
+    console.error("Samrat AI Standalone Chat Error:", error);
+    res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment." });
+  }
 });
 
 // Universal API.php endpoint router handler
@@ -687,6 +768,175 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
           res.json({ user: userResponse });
         } else {
           res.json({ error: "User not found after update." });
+        }
+        break;
+      }
+
+      case 'chat_samrat':
+      case 'chat_with_samrat': {
+        const { message, context, useThinking, history = [] } = req.body;
+        if (!message) {
+          return res.status(400).json({ error: "Message is required." });
+        }
+        try {
+          const ai = getAiClient();
+          const model = useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+          const systemInstruction = `You are Samrat AI, a friendly, intelligent, and 24/7 AI assistant for the Blood Bank Management System.
+Your goal is to help Admins, Donors, and Recipients with their queries about blood donation, health, or navigating the system.
+
+You are equipped with specialized knowledge about:
+1. General conversation and greeting users warmly.
+2. Blood donation information (preparation, recovery, guidelines).
+3. Blood group compatibility (O-, O+, A+, A-, B+, B-, AB+, AB- Universal donor/recipient facts).
+4. Blood donation eligibility criteria (age 18-65, weight > 50kg, hemoglobin levels, waiting intervals of 56/90 days between donations).
+5. Emergency blood guidance (how to request blood urgently, using emergency access keys, finding nearby hospitals).
+6. Project-related assistance (navigating the dashboard, registering requests, booking appointments, uploading certificates, using peer messenger).
+7. Health-related general guidance (hydration, iron-rich diet, rest). Always include a clear disclaimer when giving health guidance: "Disclaimer: This AI guidance is for general informational purposes and is not a replacement for professional medical advice. Always consult a qualified doctor for personal health diagnosis or treatment."
+
+Current User Context: ${context || 'General Visitor'}
+
+Keep answers clear, concise, professional, and empathetic. Use markdown formatting with bullet points or bold text where helpful for readability.`;
+
+          const config = {
+            systemInstruction,
+            tools: [{ googleSearch: {} }]
+          };
+          if (useThinking) {
+            config.thinkingConfig = { thinkingBudget: 32768 };
+          }
+
+          let contents = message;
+          if (Array.isArray(history) && history.length > 0) {
+            contents = [
+              ...history.map(item => ({
+                role: item.role === 'user' ? 'user' : 'model',
+                parts: [{ text: item.text }]
+              })),
+              { role: 'user', parts: [{ text: message }] }
+            ];
+          }
+
+          const response = await ai.models.generateContent({
+            model,
+            contents,
+            config
+          });
+
+          let text = response.text || "I didn't quite catch that. Could you rephrase your question?";
+          
+          const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
+          if (chunks && Array.isArray(chunks)) {
+            const links = chunks
+              .map(chunk => chunk.web?.uri || chunk.maps?.uri)
+              .filter(Boolean);
+            if (links.length > 0) {
+              const uniqueLinks = Array.from(new Set(links));
+              text += "\n\nSources:\n" + uniqueLinks.map(link => `- ${link}`).join("\n");
+            }
+          }
+
+          res.json({ response: text, text });
+        } catch (error) {
+          console.error("Samrat AI Chat Error:", error);
+          res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment." });
+        }
+        break;
+      }
+
+      case 'get_health_tips': {
+        const { userRole = 'Donor' } = req.body;
+        try {
+          const ai = getAiClient();
+          const model = 'gemini-3-flash-preview';
+          const dateStr = new Date().toDateString();
+          const prompt = `Provide exactly 3 short, inspiring, distinct health tips or facts specifically for a blood bank system donor/user (${userRole}) for today, ${dateStr}. 
+Each tip should be a single sentence. Focus on hydration, nutrition, and the positive impact of donation. 
+Return them as a simple list separated by newlines.`;
+
+          const response = await ai.models.generateContent({
+            model,
+            contents: prompt,
+          });
+
+          const text = response.text || "";
+          const tips = text.split('\n').map(t => t.replace(/^\d+\.\s*/, '').trim()).filter(t => t.length > 5);
+          
+          if (tips.length >= 3) {
+            res.json({ tips: tips.slice(0, 3) });
+          } else {
+            res.json({
+              tips: [
+                "Stay hydrated by drinking plenty of water throughout the day.",
+                "Eat iron-rich foods like spinach and lentils to keep your levels high.",
+                "Every single blood donation can save up to three lives."
+              ]
+            });
+          }
+        } catch (error) {
+          console.error("Gemini Health Tips Error:", error);
+          res.json({
+            tips: [
+              "Drink extra fluids before and after your donation.",
+              "Maintain a healthy iron level in your diet.",
+              "Your donation makes a real difference in your community."
+            ]
+          });
+        }
+        break;
+      }
+
+      case 'analyze_medical_image': {
+        const { base64Data, mimeType } = req.body;
+        try {
+          const ai = getAiClient();
+          const response = await ai.models.generateContent({
+            model: 'gemini-3-pro-preview',
+            contents: {
+              parts: [
+                {
+                  inlineData: {
+                    data: base64Data,
+                    mimeType: mimeType || 'image/jpeg'
+                  }
+                },
+                {
+                  text: "Analyze this medical certificate or document for a blood bank system. Extract the blood type, date of donation, and hospital name if visible. Format the output clearly: Hospital Name: [name], Date: [date], Blood Type: [type]."
+                }
+              ]
+            }
+          });
+          res.json({ text: response.text || "Could not analyze the image." });
+        } catch (error) {
+          console.error("Image Analysis Error:", error);
+          res.status(500).json({ error: "Failed to process image." });
+        }
+        break;
+      }
+
+      case 'transcribe_audio': {
+        const { base64Audio } = req.body;
+        try {
+          const ai = getAiClient();
+          const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: {
+              parts: [
+                {
+                  inlineData: {
+                    data: base64Audio,
+                    mimeType: 'audio/wav'
+                  }
+                },
+                {
+                  text: "Transcribe the following audio precisely."
+                }
+              ]
+            }
+          });
+          res.json({ text: response.text || "" });
+        } catch (error) {
+          console.error("Transcription Error:", error);
+          res.status(500).json({ error: "Failed to transcribe audio." });
         }
         break;
       }
