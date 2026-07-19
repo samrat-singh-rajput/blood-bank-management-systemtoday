@@ -260,7 +260,7 @@ Keep answers clear, concise, professional, and empathetic. Use markdown formatti
     res.json({ response: text, text });
   } catch (error) {
     console.error("Samrat AI Standalone Chat Error:", error);
-    res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment." });
+    res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment.", details: error.message });
   }
 });
 
@@ -822,7 +822,7 @@ Keep answers clear, concise, professional, and empathetic. Use markdown formatti
           res.json({ response: text, text });
         } catch (error) {
           console.error("Samrat AI Chat Error:", error);
-          res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment." });
+          res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment.", details: error.message });
         }
         break;
       }
