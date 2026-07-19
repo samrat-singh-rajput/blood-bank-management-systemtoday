@@ -37,30 +37,54 @@ export const chatWithSamrat = async (
   history: ChatHistoryItem[] = []
 ): Promise<string> => {
   try {
-    // First attempt through fetchAPI (which routes to /api.php or backend URL)
-    const response = await fetchAPI('chat_samrat', 'POST', {
-      message,
-      context,
-      useThinking,
-      history
-    });
+    let response = null;
+    try {
+      response = await fetchAPI('chat_samrat', 'POST', {
+        message,
+        context,
+        useThinking,
+        history
+      });
+    } catch (apiErr) {
+      console.warn("fetchAPI attempt failed, trying direct local endpoints...", apiErr);
+    }
 
     if (response && (response.response || response.text)) {
       return response.response || response.text;
     }
 
-    // Direct fallback to standalone /api/chat endpoint if fetchAPI returned null (e.g. storage mode or CORS edge case)
-    const directRes = await fetch('http://localhost:5000/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, context, useThinking, history })
-    });
-
-    if (directRes.ok) {
-      const data = await directRes.json();
-      if (data && (data.response || data.text)) {
-        return data.response || data.text;
+    // Fallback 1: Direct local Express endpoint
+    try {
+      const directRes = await fetch('http://localhost:5000/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, context, useThinking, history })
+      });
+      if (directRes.ok) {
+        const data = await directRes.json();
+        if (data && (data.response || data.text)) {
+          return data.response || data.text;
+        }
       }
+    } catch (err) {
+      // Continue to next fallback
+    }
+
+    // Fallback 2: Relative /api/chat or /api.php endpoint
+    try {
+      const relRes = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, context, useThinking, history })
+      });
+      if (relRes.ok) {
+        const data = await relRes.json();
+        if (data && (data.response || data.text)) {
+          return data.response || data.text;
+        }
+      }
+    } catch (err) {
+      // Continue
     }
 
     return "My systems are currently experiencing high traffic. Please try asking again in a moment.";

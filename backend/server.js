@@ -227,14 +227,6 @@ Current User Context: ${context || 'General Visitor'}
 
 Keep answers clear, concise, professional, and empathetic. Use markdown formatting with bullet points or bold text where helpful for readability.`;
 
-    const config = {
-      systemInstruction,
-      tools: [{ googleSearch: {} }]
-    };
-    if (useThinking) {
-      config.thinkingConfig = { thinkingBudget: 32768 };
-    }
-
     let contents = message;
     if (Array.isArray(history) && history.length > 0) {
       contents = [
@@ -246,25 +238,25 @@ Keep answers clear, concise, professional, and empathetic. Use markdown formatti
       ];
     }
 
-    const response = await ai.models.generateContent({
-      model,
-      contents,
-      config
-    });
-
-    let text = response.text || "I didn't quite catch that. Could you rephrase your question?";
-    
-    const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-    if (chunks && Array.isArray(chunks)) {
-      const links = chunks
-        .map(chunk => chunk.web?.uri || chunk.maps?.uri)
-        .filter(Boolean);
-      if (links.length > 0) {
-        const uniqueLinks = Array.from(new Set(links));
-        text += "\n\nSources:\n" + uniqueLinks.map(link => `- ${link}`).join("\n");
-      }
+    let response;
+    try {
+      const baseConfig = { systemInstruction };
+      if (useThinking) baseConfig.thinkingConfig = { thinkingBudget: 32768 };
+      response = await ai.models.generateContent({
+        model: useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
+        contents,
+        config: baseConfig
+      });
+    } catch (innerErr) {
+      console.warn("Standalone chat primary generation failed, falling back...", innerErr.message);
+      response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents,
+        config: { systemInstruction }
+      });
     }
 
+    let text = response?.text || "I didn't quite catch that. Could you rephrase your question?";
     res.json({ response: text, text });
   } catch (error) {
     console.error("Samrat AI Standalone Chat Error:", error);
@@ -797,14 +789,6 @@ Current User Context: ${context || 'General Visitor'}
 
 Keep answers clear, concise, professional, and empathetic. Use markdown formatting with bullet points or bold text where helpful for readability.`;
 
-          const config = {
-            systemInstruction,
-            tools: [{ googleSearch: {} }]
-          };
-          if (useThinking) {
-            config.thinkingConfig = { thinkingBudget: 32768 };
-          }
-
           let contents = message;
           if (Array.isArray(history) && history.length > 0) {
             contents = [
@@ -816,25 +800,25 @@ Keep answers clear, concise, professional, and empathetic. Use markdown formatti
             ];
           }
 
-          const response = await ai.models.generateContent({
-            model,
-            contents,
-            config
-          });
-
-          let text = response.text || "I didn't quite catch that. Could you rephrase your question?";
-          
-          const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-          if (chunks && Array.isArray(chunks)) {
-            const links = chunks
-              .map(chunk => chunk.web?.uri || chunk.maps?.uri)
-              .filter(Boolean);
-            if (links.length > 0) {
-              const uniqueLinks = Array.from(new Set(links));
-              text += "\n\nSources:\n" + uniqueLinks.map(link => `- ${link}`).join("\n");
-            }
+          let response;
+          try {
+            const baseConfig = { systemInstruction };
+            if (useThinking) baseConfig.thinkingConfig = { thinkingBudget: 32768 };
+            response = await ai.models.generateContent({
+              model: useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
+              contents,
+              config: baseConfig
+            });
+          } catch (innerErr) {
+            console.warn("Universal chat primary generation failed, falling back...", innerErr.message);
+            response = await ai.models.generateContent({
+              model: 'gemini-3-flash-preview',
+              contents,
+              config: { systemInstruction }
+            });
           }
 
+          let text = response?.text || "I didn't quite catch that. Could you rephrase your question?";
           res.json({ response: text, text });
         } catch (error) {
           console.error("Samrat AI Chat Error:", error);
