@@ -15,6 +15,8 @@ import { Button } from './components/Button';
 import { SettingsModal } from './components/SettingsModal';
 import { SamratChatbot } from './components/SamratChatbot';
 
+import { clearLegacyLocalStorageCollections } from './services/mongoClient';
+
 type ViewState = 'landing' | 'login' | 'register' | 'dashboard';
 type SignupStep = 'role' | 'mobile' | 'otp' | 'credentials';
 
@@ -42,6 +44,11 @@ const App: React.FC = () => {
   const [debugOTP, setDebugOTP] = useState('');
 
   const [loginForm, setLoginForm] = useState({ username: '', password: '', role: UserRole.USER });
+
+  useEffect(() => {
+    // Purge legacy client-side database collections from LocalStorage
+    clearLegacyLocalStorageCollections();
+  }, []);
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
@@ -194,6 +201,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem('bloodbank_user');
+    localStorage.removeItem('bloodbank_token');
     setCurrentView('landing');
     setRegStep('role');
     setRegPhone('');

@@ -85,8 +85,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   
   const handleSaveNetwork = () => {
     localStorage.setItem('bloodbank_server_ip', serverIp);
-    localStorage.setItem('bloodbank_storage_mode', storageMode);
-    alert(`Storage Mode set to: ${storageMode.toUpperCase()}. Target: ${serverIp}.`);
+    alert(`Server target updated to: ${serverIp}. Reloading connection.`);
     window.location.reload();
   };
 
@@ -95,8 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     try {
       const updated = await API.updateUserProfile(user._id, formData);
       onUpdate(updated);
-      const isMongodb = (localStorage.getItem('bloodbank_storage_mode') || 'local') === 'mongodb' || (localStorage.getItem('bloodbank_storage_mode') || 'local') === 'mysql';
-      alert(isMongodb ? "Profile updated in MongoDB Atlas!" : "Profile updated successfully!");
+      alert("Profile updated successfully!");
     } catch (err) {
       alert("Failed to update profile record.");
     } finally {

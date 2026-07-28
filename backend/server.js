@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { MongoClient, ObjectId } from 'mongodb';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { GoogleGenAI } from '@google/genai';
 import { sendUnifiedOTP, verifyBrevoAccount, sendBrevoEmailOTP, sendBrevoSMSOTP } from './services/brevoService.js';
 
@@ -14,6 +15,37 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 dotenv.config({ path: path.join(__dirname, '../.env') });
+
+const JWT_SECRET = process.env.JWT_SECRET || 'bloodbank_jwt_secret_key_2026_super_secure';
+
+function sanitizeUser(user) {
+  if (!user) return null;
+  const sanitized = { ...user };
+  delete sanitized.password;
+  delete sanitized.passwordHash;
+  delete sanitized.otp;
+  delete sanitized.otp_expiry;
+  return sanitized;
+}
+
+function generateToken(user) {
+  return jwt.sign(
+    { id: user._id, username: user.username, role: user.role, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+}
+
+function verifyTokenFromReq(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+  const token = authHeader.split(' ')[1];
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (err) {
+    return null;
+  }
+}
 
 const getAiClient = () => {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -285,13 +317,19 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
           role
         });
         
-        if (user && (bcrypt.compareSync(password, user.password) || password === user.password)) {
-          const userResponse = { ...user };
-          delete userResponse.password;
-          res.json({ user: userResponse });
-        } else {
-          res.json({ error: "Invalid credentials or role mismatch" });
+        if (user) {
+          const isValid = bcrypt.compareSync(password, user.password) || password === user.password;
+          if (isValid) {
+            if (password === user.password) {
+              const hashed = bcrypt.hashSync(password, 10);
+              await db.collection('users').updateOne({ _id: user._id }, { $set: { password: hashed } });
+            }
+            const token = generateToken(user);
+            res.json({ user: sanitizeUser(user), token });
+            break;
+          }
         }
+        res.json({ error: "Invalid credentials or role mismatch" });
         break;
       }
 
@@ -353,9 +391,8 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
             }
           }
           
-          const userResponse = { ...user };
-          delete userResponse.password;
-          res.json({ user: userResponse });
+          const token = generateToken(user);
+          res.json({ user: sanitizeUser(user), token });
         } catch (err) {
           console.error("Secure Google authentication error:", err.message);
           res.json({ error: "Google authentication failed: " + err.message });
@@ -505,19 +542,14 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
         };
         await db.collection('users').insertOne(newUser);
         
-        const userResponse = { ...newUser };
-        delete userResponse.password;
-        res.json({ user: userResponse });
+        const token = generateToken(newUser);
+        res.json({ user: sanitizeUser(newUser), token });
         break;
       }
 
       case 'get_users': {
         const users = await db.collection('users').find({}).toArray();
-        const sanitized = users.map(u => {
-          const copy = { ...u };
-          delete copy.password;
-          return copy;
-        });
+        const sanitized = users.map(u => sanitizeUser(u));
         res.json({ users: sanitized });
         break;
       }
@@ -755,9 +787,7 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
         );
         const updatedUser = await db.collection('users').findOne(toIdQuery(userId));
         if (updatedUser) {
-          const userResponse = { ...updatedUser };
-          delete userResponse.password;
-          res.json({ user: userResponse });
+          res.json({ user: sanitizeUser(updatedUser) });
         } else {
           res.json({ error: "User not found after update." });
         }
