@@ -102,7 +102,38 @@ export const db = {
 // Cleanup any legacy database keys in browser LocalStorage
 export function clearLegacyLocalStorageCollections() {
   if (typeof window === 'undefined' || !window.localStorage) return;
+
+  const allowedKeys = new Set([
+    'bloodbank_token',
+    'bloodbank_user',
+    'bloodbank_theme',
+    'bloodbank_server_ip'
+  ]);
+
+  const keysToRemove: string[] = [];
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && !allowedKeys.has(key)) {
+      if (
+        key.startsWith('lifeflow_') ||
+        key.startsWith('mongodb_collection_') ||
+        key === 'bloodbank_storage_mode'
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+  }
+
+  // Explicitly remove legacy keys from previous app iterations
   const legacyKeys = [
+    'lifeflow_users',
+    'lifeflow_stocks',
+    'lifeflow_requests',
+    'lifeflow_hospitals',
+    'lifeflow_feedback',
+    'lifeflow_messages',
+    'lifeflow_logs',
     'mongodb_collection_users',
     'mongodb_collection_stocks',
     'mongodb_collection_requests',
@@ -116,7 +147,18 @@ export function clearLegacyLocalStorageCollections() {
     'mongodb_collection_campaigns',
     'bloodbank_storage_mode'
   ];
-  legacyKeys.forEach(key => {
-    localStorage.removeItem(key);
+
+  legacyKeys.forEach(k => {
+    if (!keysToRemove.includes(k)) {
+      keysToRemove.push(k);
+    }
+  });
+
+  keysToRemove.forEach(key => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      // Ignore
+    }
   });
 }
