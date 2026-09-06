@@ -132,3 +132,38 @@ export interface Campaign {
   imageUrl: string;
   attendees: number;
 }
+
+// ============================================================================
+// Step 6: RAG Sources & MCP Operational Tool Types
+// ============================================================================
+
+export interface RagSource {
+  fileName: string;
+  chunkIndex: number;
+  score: number;
+  source?: string;
+  content?: string;
+}
+
+export interface ToolUsage {
+  tool: string;
+  args?: Record<string, unknown>;
+  result?: {
+    success?: boolean;
+    error?: string;
+    totalGroupsReturned?: number;
+    totalDonorsFound?: number;
+    totalRequestsFound?: number;
+    totalCampaignsFound?: number;
+    data?: any[];
+    [key: string]: unknown;
+  };
+}
+
+export interface SamratChatResponse {
+  text: string;
+  response?: string;
+  sources?: RagSource[];
+  toolUsage?: ToolUsage[];
+}
+

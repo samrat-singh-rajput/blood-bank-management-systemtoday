@@ -1,6 +1,8 @@
 
 import { fetchAPI } from "./api";
-import { User, UserRole } from "../types";
+import { User, UserRole, SamratChatResponse, RagSource, ToolUsage } from "../types";
+
+export type { SamratChatResponse, RagSource, ToolUsage };
 
 // Helper to check if we can reach backend or fallback locally
 export const getHealthTips = async (userRole: string = "Donor"): Promise<string[]> => {
@@ -35,7 +37,7 @@ export const chatWithSamrat = async (
   context: string = "",
   useThinking: boolean = false,
   history: ChatHistoryItem[] = []
-): Promise<string> => {
+): Promise<SamratChatResponse> => {
   try {
     let response = null;
     try {
@@ -50,7 +52,12 @@ export const chatWithSamrat = async (
     }
 
     if (response && (response.response || response.text)) {
-      return response.response || response.text;
+      return {
+        text: response.text || response.response,
+        response: response.response || response.text,
+        sources: Array.isArray(response.sources) ? response.sources : [],
+        toolUsage: Array.isArray(response.toolUsage) ? response.toolUsage : []
+      };
     }
 
     // Fallback 1: Direct local Express endpoint
@@ -63,7 +70,12 @@ export const chatWithSamrat = async (
       if (directRes.ok) {
         const data = await directRes.json();
         if (data && (data.response || data.text)) {
-          return data.response || data.text;
+          return {
+            text: data.text || data.response,
+            response: data.response || data.text,
+            sources: Array.isArray(data.sources) ? data.sources : [],
+            toolUsage: Array.isArray(data.toolUsage) ? data.toolUsage : []
+          };
         }
       }
     } catch (err) {
@@ -80,17 +92,32 @@ export const chatWithSamrat = async (
       if (relRes.ok) {
         const data = await relRes.json();
         if (data && (data.response || data.text)) {
-          return data.response || data.text;
+          return {
+            text: data.text || data.response,
+            response: data.response || data.text,
+            sources: Array.isArray(data.sources) ? data.sources : [],
+            toolUsage: Array.isArray(data.toolUsage) ? data.toolUsage : []
+          };
         }
       }
     } catch (err) {
       // Continue
     }
 
-    return "My systems are currently experiencing high traffic. Please try asking again in a moment.";
+    return {
+      text: "My systems are currently experiencing high traffic. Please try asking again in a moment.",
+      response: "My systems are currently experiencing high traffic. Please try asking again in a moment.",
+      sources: [],
+      toolUsage: []
+    };
   } catch (error) {
     console.error("Samrat AI Chat Error:", error);
-    return "My systems are temporarily unavailable right now. Please check back shortly or consult our FAQ section.";
+    return {
+      text: "My systems are temporarily unavailable right now. Please check back shortly or consult our FAQ section.",
+      response: "My systems are temporarily unavailable right now. Please check back shortly or consult our FAQ section.",
+      sources: [],
+      toolUsage: []
+    };
   }
 };
 

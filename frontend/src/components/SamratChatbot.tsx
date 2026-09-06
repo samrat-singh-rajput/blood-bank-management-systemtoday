@@ -18,7 +18,9 @@ import {
   Heart,
   Droplet
 } from 'lucide-react';
-import { chatWithSamrat, ChatHistoryItem } from '../services/geminiService';
+import { chatWithSamrat, ChatHistoryItem, RagSource, ToolUsage } from '../services/geminiService';
+import { RagSourceBadge } from './chat/RagSourceBadge';
+import { LiveDataCard } from './chat/LiveDataCard';
 import { User } from '../types';
 
 interface SamratChatbotProps {
@@ -32,6 +34,8 @@ interface Message {
   text: string;
   timestamp: string;
   isError?: boolean;
+  sources?: RagSource[];
+  toolUsage?: ToolUsage[];
 }
 
 export const SamratChatbot: React.FC<SamratChatbotProps> = ({ currentUser, currentView = 'landing' }) => {
@@ -173,12 +177,14 @@ export const SamratChatbot: React.FC<SamratChatbotProps> = ({ currentUser, curre
       }));
 
     try {
-      const responseText = await chatWithSamrat(messageText.trim(), contextStr, useThinking, historyPayload);
+      const responseData = await chatWithSamrat(messageText.trim(), contextStr, useThinking, historyPayload);
       
       const botMsg: Message = {
         id: 'bot-' + Date.now(),
         sender: 'bot',
-        text: responseText,
+        text: responseData.text || responseData.response || '',
+        sources: responseData.sources,
+        toolUsage: responseData.toolUsage,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
       setMessages(prev => [...prev, botMsg]);
@@ -360,6 +366,16 @@ export const SamratChatbot: React.FC<SamratChatbotProps> = ({ currentUser, curre
                   <div className="break-words">
                     {msg.sender === 'bot' ? formatMessageText(msg.text) : msg.text}
                   </div>
+
+                  {/* RAG Knowledge Source Citations */}
+                  {msg.sender === 'bot' && !msg.isError && (
+                    <RagSourceBadge sources={msg.sources} />
+                  )}
+
+                  {/* MCP Live Operational Data Cards */}
+                  {msg.sender === 'bot' && !msg.isError && (
+                    <LiveDataCard toolUsage={msg.toolUsage} />
+                  )}
                   <div
                     className={`text-[10px] mt-1.5 flex items-center justify-end gap-1 ${
                       msg.sender === 'user' ? 'text-rose-100/80' : 'text-gray-400 dark:text-gray-500'
