@@ -7,6 +7,7 @@ import { MongoClient, ObjectId } from 'mongodb';
 import nodemailer from 'nodemailer';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 import { GoogleGenAI } from '@google/genai';
 import { sendUnifiedOTP, verifyBrevoAccount, sendBrevoEmailOTP, sendBrevoSMSOTP } from './services/brevoService.js';
 import { generateGroundedChatResponse } from './services/ragService.js';
@@ -56,7 +57,12 @@ const getAiClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+const configuredOrigins = process.env.CORS_ALLOWED_ORIGINS
+  ? process.env.CORS_ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+  : [];
+
 const allowedOrigins = [
+  ...configuredOrigins,
   'https://blood-bank-management-system-ecru.vercel.app',
   'https://blood-bank-management-system-git-main-rajput6.vercel.app',
   'https://blood-bank-management-system-61whl3217-rajput6.vercel.app',
@@ -83,6 +89,36 @@ const app = express();
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Production rate limiter for expensive AI completion endpoints
+export const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: parseInt(process.env.AI_RATE_LIMIT || '30', 10), // Max 30 requests per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  statusCode: 429,
+  message: {
+    error: "Too many AI requests. Please slow down and try again in a moment."
+  }
+});
+
+// Helper for validating AI chat message size and conversation turn depth
+export function validateAiChatInput(body) {
+  if (!body || typeof body !== 'object') {
+    return { valid: false, error: "Request body must be a JSON object." };
+  }
+  const { message, history } = body;
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    return { valid: false, error: "Message is required and must be a non-empty string." };
+  }
+  if (message.length > 2000) {
+    return { valid: false, error: "Message is too long. Maximum allowed length is 2,000 characters." };
+  }
+  if (history && (!Array.isArray(history) || history.length > 20)) {
+    return { valid: false, error: "Conversation history must be an array of at most 20 turns." };
+  }
+  return { valid: true };
+}
 
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -235,24 +271,33 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Standalone secure chat endpoint (POST /api/chat) with RAG grounding
-app.post('/api/chat', async (req, res) => {
-  const { message, context, useThinking, history = [] } = req.body;
-  if (!message) {
-    return res.status(400).json({ error: "Message is required." });
+// Standalone secure chat endpoint (POST /api/chat) with RAG grounding, rate limiting & input validation
+app.post('/api/chat', aiLimiter, async (req, res) => {
+  const validation = validateAiChatInput(req.body);
+  if (!validation.valid) {
+    return res.status(400).json({ error: validation.error });
   }
+
+  const { message, context, useThinking, history = [] } = req.body;
+  const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
   try {
     const result = await generateGroundedChatResponse({
       message,
       context,
       useThinking,
       history,
-      dbInstance: db
+      dbInstance: db,
+      requestId
     });
     res.json(result);
   } catch (error) {
-    console.error("Samrat AI Standalone Chat Error:", error);
-    res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment.", details: error.message });
+    console.error(`[${requestId}] Samrat AI Standalone Chat Error:`, error.message);
+    const isDev = process.env.NODE_ENV === 'development' || process.env.APP_DEBUG === 'true';
+    res.status(500).json({
+      error: "Samrat AI service is temporarily unavailable. Please try again in a moment.",
+      ...(isDev ? { details: error.message } : {})
+    });
   }
 });
 
@@ -756,24 +801,34 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
 
       case 'chat_samrat':
       case 'chat_with_samrat': {
-        const { message, context, useThinking, history = [] } = req.body;
-        if (!message) {
-          return res.status(400).json({ error: "Message is required." });
-        }
-        try {
-          const result = await generateGroundedChatResponse({
-            message,
-            context,
-            useThinking,
-            history,
-            dbInstance: db
-          });
-          res.json(result);
-        } catch (error) {
-          console.error("Samrat AI Chat Error:", error);
-          res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment.", details: error.message });
-        }
-        break;
+        return aiLimiter(req, res, async () => {
+          const validation = validateAiChatInput(req.body);
+          if (!validation.valid) {
+            return res.status(400).json({ error: validation.error });
+          }
+
+          const { message, context, useThinking, history = [] } = req.body;
+          const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+          try {
+            const result = await generateGroundedChatResponse({
+              message,
+              context,
+              useThinking,
+              history,
+              dbInstance: db,
+              requestId
+            });
+            res.json(result);
+          } catch (error) {
+            console.error(`[${requestId}] Samrat AI Chat Error:`, error.message);
+            const isDev = process.env.NODE_ENV === 'development' || process.env.APP_DEBUG === 'true';
+            res.status(500).json({
+              error: "Samrat AI service is temporarily unavailable. Please try again in a moment.",
+              ...(isDev ? { details: error.message } : {})
+            });
+          }
+        });
       }
 
       case 'get_health_tips': {

@@ -178,9 +178,7 @@ No specific documents from the Blood Bank educational knowledge base exceeded th
 If the query requires live data, call the appropriate MCP tool. Otherwise respond politely using your general system knowledge.
 Do not falsely claim that this response is cited from a specific knowledge base document.
 Always include the standard medical disclaimer when medical topics are discussed.`;
-    return prompt;
-  }
-
+  } else {
     prompt += `\n\n=== VERIFIED DOMAIN KNOWLEDGE (GROUNDING CONTEXT) ===
 The following reference passages were retrieved from the Blood Bank Management System knowledge base based on semantic relevance to the user's message:
 
