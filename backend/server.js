@@ -9,6 +9,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { GoogleGenAI } from '@google/genai';
 import { sendUnifiedOTP, verifyBrevoAccount, sendBrevoEmailOTP, sendBrevoSMSOTP } from './services/brevoService.js';
+import { generateGroundedChatResponse } from './services/ragService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,7 +99,7 @@ async function connectDB() {
     const clientOptions = {
       serverApi: {
         version: '1',
-        strict: true,
+        strict: false,
         deprecationErrors: true
       },
       connectTimeoutMS: 20000,
@@ -234,62 +235,21 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Standalone secure chat endpoint (POST /api/chat)
+// Standalone secure chat endpoint (POST /api/chat) with RAG grounding
 app.post('/api/chat', async (req, res) => {
   const { message, context, useThinking, history = [] } = req.body;
   if (!message) {
     return res.status(400).json({ error: "Message is required." });
   }
   try {
-    const ai = getAiClient();
-    const model = useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
-    const systemInstruction = `You are Samrat AI, a friendly, intelligent, and 24/7 AI assistant for the Blood Bank Management System.
-Your goal is to help Admins, Donors, and Recipients with their queries about blood donation, health, or navigating the system.
-
-You are equipped with specialized knowledge about:
-1. General conversation and greeting users warmly.
-2. Blood donation information (preparation, recovery, guidelines).
-3. Blood group compatibility (O-, O+, A+, A-, B+, B-, AB+, AB- Universal donor/recipient facts).
-4. Blood donation eligibility criteria (age 18-65, weight > 50kg, hemoglobin levels, waiting intervals of 56/90 days between donations).
-5. Emergency blood guidance (how to request blood urgently, using emergency access keys, finding nearby hospitals).
-6. Project-related assistance (navigating the dashboard, registering requests, booking appointments, uploading certificates, using peer messenger).
-7. Health-related general guidance (hydration, iron-rich diet, rest). Always include a clear disclaimer when giving health guidance: "Disclaimer: This AI guidance is for general informational purposes and is not a replacement for professional medical advice. Always consult a qualified doctor for personal health diagnosis or treatment."
-
-Current User Context: ${context || 'General Visitor'}
-
-Keep answers clear, concise, professional, and empathetic. Use markdown formatting with bullet points or bold text where helpful for readability.`;
-
-    let contents = message;
-    if (Array.isArray(history) && history.length > 0) {
-      contents = [
-        ...history.map(item => ({
-          role: item.role === 'user' ? 'user' : 'model',
-          parts: [{ text: item.text }]
-        })),
-        { role: 'user', parts: [{ text: message }] }
-      ];
-    }
-
-    let response;
-    try {
-      const baseConfig = { systemInstruction };
-      if (useThinking) baseConfig.thinkingConfig = { thinkingBudget: 32768 };
-      response = await ai.models.generateContent({
-        model: useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
-        contents,
-        config: baseConfig
-      });
-    } catch (innerErr) {
-      console.warn("Standalone chat primary generation failed, falling back...", innerErr.message);
-      response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents,
-        config: { systemInstruction }
-      });
-    }
-
-    let text = response?.text || "I didn't quite catch that. Could you rephrase your question?";
-    res.json({ response: text, text });
+    const result = await generateGroundedChatResponse({
+      message,
+      context,
+      useThinking,
+      history,
+      dbInstance: db
+    });
+    res.json(result);
   } catch (error) {
     console.error("Samrat AI Standalone Chat Error:", error);
     res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment.", details: error.message });
@@ -801,55 +761,14 @@ app.all(['/api.php', '/backend/api.php', '/api'], async (req, res) => {
           return res.status(400).json({ error: "Message is required." });
         }
         try {
-          const ai = getAiClient();
-          const model = useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
-          const systemInstruction = `You are Samrat AI, a friendly, intelligent, and 24/7 AI assistant for the Blood Bank Management System.
-Your goal is to help Admins, Donors, and Recipients with their queries about blood donation, health, or navigating the system.
-
-You are equipped with specialized knowledge about:
-1. General conversation and greeting users warmly.
-2. Blood donation information (preparation, recovery, guidelines).
-3. Blood group compatibility (O-, O+, A+, A-, B+, B-, AB+, AB- Universal donor/recipient facts).
-4. Blood donation eligibility criteria (age 18-65, weight > 50kg, hemoglobin levels, waiting intervals of 56/90 days between donations).
-5. Emergency blood guidance (how to request blood urgently, using emergency access keys, finding nearby hospitals).
-6. Project-related assistance (navigating the dashboard, registering requests, booking appointments, uploading certificates, using peer messenger).
-7. Health-related general guidance (hydration, iron-rich diet, rest). Always include a clear disclaimer when giving health guidance: "Disclaimer: This AI guidance is for general informational purposes and is not a replacement for professional medical advice. Always consult a qualified doctor for personal health diagnosis or treatment."
-
-Current User Context: ${context || 'General Visitor'}
-
-Keep answers clear, concise, professional, and empathetic. Use markdown formatting with bullet points or bold text where helpful for readability.`;
-
-          let contents = message;
-          if (Array.isArray(history) && history.length > 0) {
-            contents = [
-              ...history.map(item => ({
-                role: item.role === 'user' ? 'user' : 'model',
-                parts: [{ text: item.text }]
-              })),
-              { role: 'user', parts: [{ text: message }] }
-            ];
-          }
-
-          let response;
-          try {
-            const baseConfig = { systemInstruction };
-            if (useThinking) baseConfig.thinkingConfig = { thinkingBudget: 32768 };
-            response = await ai.models.generateContent({
-              model: useThinking ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
-              contents,
-              config: baseConfig
-            });
-          } catch (innerErr) {
-            console.warn("Universal chat primary generation failed, falling back...", innerErr.message);
-            response = await ai.models.generateContent({
-              model: 'gemini-3-flash-preview',
-              contents,
-              config: { systemInstruction }
-            });
-          }
-
-          let text = response?.text || "I didn't quite catch that. Could you rephrase your question?";
-          res.json({ response: text, text });
+          const result = await generateGroundedChatResponse({
+            message,
+            context,
+            useThinking,
+            history,
+            dbInstance: db
+          });
+          res.json(result);
         } catch (error) {
           console.error("Samrat AI Chat Error:", error);
           res.status(500).json({ error: "Samrat AI service is temporarily unavailable. Please try again in a moment.", details: error.message });
